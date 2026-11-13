@@ -12,12 +12,12 @@ describe('Feature: scoring a wolf + wolf roll', () => {
     ['sideMarkUp', 'back', 'score', 5, 'Play Dead'],
     ['upright', 'sideMarkDown', 'score', 5, 'Prowl'],
     ['sideMarkUp', 'noseDown', 'score', 10, 'Sniff'],
-    ['tailDown', 'sideMarkDown', 'score', 15, 'Howl'],
+    ['tailDown', 'sideMarkDown', 'score', 20, 'Howl'],
     ['back', 'back', 'double', 20, 'Double Play Dead'],
     ['upright', 'upright', 'double', 20, 'Double Prowl'],
     ['noseDown', 'noseDown', 'double', 40, 'Double Sniff'],
-    ['tailDown', 'tailDown', 'double', 60, 'Double Howl'],
-    ['tailDown', 'noseDown', 'score', 25, 'Howl + Sniff'],
+    ['tailDown', 'tailDown', 'double', 80, 'Double Howl'],
+    ['tailDown', 'noseDown', 'score', 30, 'Howl + Sniff'],
     ['back', 'upright', 'score', 10, 'Play Dead + Prowl'],
   ];
 
@@ -53,7 +53,7 @@ describe('Feature: scoring a mixed wolf + sheep roll', () => {
   const mixed = { animals: [wolf, TEST_SHEEP] as [typeof wolf, typeof TEST_SHEEP] };
 
   it.each([
-    ['tailDown', 'tailDown', 'double', (15 + 20) * 2, 'Double: Howl + Woolpack'],
+    ['tailDown', 'tailDown', 'double', (20 + 20) * 2, 'Double: Howl + Woolpack'],
     ['noseDown', 'upright', 'score', 10 + 6, 'Sniff + Graze'],
     ['sideMarkUp', 'tailDown', 'score', 20, 'Woolpack'],
     ['back', 'sideMarkDown', 'score', 5, 'Play Dead'],
