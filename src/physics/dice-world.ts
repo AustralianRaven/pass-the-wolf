@@ -16,7 +16,7 @@ type Collider = RAPIER_NS.Collider;
 export const GRAVITY = -245;
 export const TIMESTEP = 1 / 240;
 /** Arena half-extents (the blanket inside the tray walls). */
-export const ARENA = { halfX: 7, halfZ: 4.5, wallHeight: 3 } as const;
+export const ARENA = { halfX: 5.4, halfZ: 3.5, wallHeight: 3 } as const;
 
 const WOOD = { friction: 0.55, restitution: 0.32 };
 const WOOL = { friction: 0.85, restitution: 0.18 };
@@ -159,12 +159,12 @@ export class DiceWorld {
   throwDice(input: ThrowInput): void {
     const rng = createRng(input.seed);
     const power = Math.min(1, Math.max(0, input.power));
-    const speed = 14 + power * 22;
+    const speed = 9 + power * 15;
     const dirX = Math.cos(input.angle);
     const dirZ = Math.sin(input.angle);
     // Start behind the centre, opposite the throw direction.
-    const startX = -dirX * (ARENA.halfX - 1.6);
-    const startZ = -dirZ * (ARENA.halfZ - 1.4);
+    const startX = -dirX * (ARENA.halfX - 1.4);
+    const startZ = -dirZ * (ARENA.halfZ - 1.1);
 
     this.dice.forEach((die, i) => {
       const offset = (i === 0 ? -1 : 1) * 1.1;

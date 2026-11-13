@@ -10,7 +10,7 @@ import { WOLF_SCORING } from './wolf-scoring';
 export const WOLF: AnimalDefinition = {
   scoring: WOLF_SCORING,
   palette: { body: '#c9965b', accent: '#3a2a1c' },
-  markAt: [-0.05, 0.4, 0.21],
+  markAt: [-0.02, 0.33, 0.2],
   parts: [
     // torso, chest ruff and a flat carved back
     { kind: 'capsule', from: [-0.26, 0.328, 0], to: [0.22, 0.344, 0], radius: 0.23 },

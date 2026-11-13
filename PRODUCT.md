@@ -40,6 +40,7 @@ The mechanic is inspired by classic animal-figure push-your-luck games. Names, p
 - Turn flow: roll, see result, roll again or bank.
 - Computer players with distinct risk personalities.
 - Swappable animals: the wolf ships first; sheep, pig and others follow. Each throw uses two dice, which may be different animals (for example one wolf and one sheep). Every animal has its own shape, its own calibrated odds, and its own original pose names; no animal reuses another game's pose names.
+- Game modes (future): the classic two-dice race first; later a five-dice category mode ("Pack Hunt": throw, hold, re-throw, fill a category sheet) and more. Mode names and categories are original, not borrowed from other dice games.
 - Score card: target score (default 100) plus a per-round history for every player, and an unmistakable "next player's turn" handover.
 - Undecided: final pose names and point values (set after a calibration run on the real geometry); sound design; whether to add house-rule toggles.
 

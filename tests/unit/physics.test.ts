@@ -93,8 +93,8 @@ describe('Feature: the physics dice world', () => {
     expect(s.steps, 'Then they stop inside the step budget').toBeLessThan(MAX_STEPS);
     for (const d of w.dice) {
       const p = d.body.translation();
-      expect(Math.abs(p.x), 'Then each die is inside the arena on X').toBeLessThan(7.1);
-      expect(Math.abs(p.z), 'Then each die is inside the arena on Z').toBeLessThan(4.6);
+      expect(Math.abs(p.x), 'Then each die is inside the arena on X').toBeLessThan(5.5);
+      expect(Math.abs(p.z), 'Then each die is inside the arena on Z').toBeLessThan(3.6);
       expect(p.y, 'Then each die is on the table, not through it').toBeGreaterThan(-0.1);
     }
     w.free();

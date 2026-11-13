@@ -33,6 +33,10 @@ npm run calibrate -- 5000 wolf sheep # a mixed pair, once the sheep exists
 - Howl was raised from the provisional 15 to 20 because it came out rarer (0.5%) than planned.
 - Alpha and Tangled are rare enough that their values are a design choice, not a measurement.
 
+## Re-check after shrinking the tray — 2026-11-13, 2,000 throws
+
+Arena reduced to 10.8 × 7 units and throws softened. Sides 74.5%, back 13.4%, upright 9.5%, nose-down 2.2%, Howl 0.55%. Results: score 40.8%, Den 28.4%, Scattered 27.6%, Double 3.0%, Tangled 0.25%. Point values unchanged.
+
 ## Guard
 
 `tests/unit/balance.test.ts` replays 300 seeded throws and fails if any pose drifts out of

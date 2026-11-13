@@ -106,7 +106,11 @@ If time runs short, I stop at a clean phase boundary and note where I got to. I 
 6. CPU personalities (Cautious / Steady / Reckless) with endgame logic.
 7. Full Cabin Game Night visual build (direction contract, finish review, `DESIGN.md`), plus audio.
 8. Accessibility and reduced-motion pass.
+8b. **Big-moment replay cutscene.** Triggers on a Double Prowl, Double Sniff, Double Howl, or Alpha (and Tangled, for the groan). Records the throw as a tape of per-step transforms, then replays it in slow motion. Letterbox bars, a short run of camera cuts (low table-edge cam, overhead cam, a cam that chases one wolf), then a slow push-in on the final pose with the call burned into a pine plaque over the freeze frame. A captioned announcer line plays, and the camera returns to the table. Click, Space or Escape skips. Under reduced motion the replay is a single still shot with the plaque. Built in the Cabin Game Night vocabulary, not copied from the reference page.
 9. Sheep, then pig, as separate commits with their own calibration.
+10. **Game modes.** A mode picker on the setup sheet. The current game becomes the "Classic" mode.
+11. **Pack Hunt mode** (five-dice category game, our own name and categories): throw five wolves, re-throw any of them up to twice, then score the landing into one empty category on a per-player sheet (e.g. Full Pack, Five Howls, Den Run). Needs: N-dice physics (DiceWorld is two dice today), click-to-hold dice between throws, a category scoring engine, and a calibration run with five dice so category values match real odds.
+12. More modes later, each a separate rules module on the shared physics and animals.
 
 ## Risks
 
