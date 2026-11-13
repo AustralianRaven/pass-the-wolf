@@ -25,9 +25,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Playwright e2e runs locally before committing or completing a PR, not in CI.
       - run: npm run check
-      - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
 
   deploy:
     if: github.event_name != 'pull_request'

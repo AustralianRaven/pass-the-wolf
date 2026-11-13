@@ -20,7 +20,7 @@ npm run dev        # http://localhost:5173
 | `npm run dev` | Vite dev server |
 | `npm run build` | Typecheck and production build |
 | `npm run check` | Typecheck, lint and unit tests |
-| `npm run e2e` | Playwright end-to-end tests |
+| `npm run e2e` | Playwright end-to-end tests (run locally before committing; not run in CI) |
 | `npm run calibrate` | Headless throw simulation; prints pose frequencies |
 
 ## Brand
