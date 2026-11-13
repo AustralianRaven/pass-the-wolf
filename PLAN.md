@@ -105,6 +105,8 @@ If time runs short, I stop at a clean phase boundary and note where I got to. I 
 
 6. CPU personalities (Cautious / Steady / Reckless) with endgame logic.
 7. Full Cabin Game Night visual build (direction contract, finish review, `DESIGN.md`), plus audio.
+7a. **New direwolf model.** Sculpted signed-distance wolves (five candidates in `wolves.html`). Kat picks one, then it replaces the capsule wolf in the game. It gets a simplified convex-hull collider and a fresh calibration run, because the new shape changes the odds.
+7b. **Grab, spin and fling.** Press on the wolves to pick them up. They lift off the blanket and follow the cursor, tumbling in your hand. Release to throw, with launch velocity and spin taken from the last ~100 ms of mouse movement and a small seeded jitter so nobody can aim for a Howl. The Roll button and Space stay as backups.
 8. Accessibility and reduced-motion pass.
 8b. **Big-moment replay cutscene.** Triggers on a Double Prowl, Double Sniff, Double Howl, or Alpha (and Tangled, for the groan). Records the throw as a tape of per-step transforms, then replays it in slow motion. Letterbox bars, a short run of camera cuts (low table-edge cam, overhead cam, a cam that chases one wolf), then a slow push-in on the final pose with the call burned into a pine plaque over the freeze frame. A captioned announcer line plays, and the camera returns to the table. Click, Space or Escape skips. Under reduced motion the replay is a single still shot with the plaque. Built in the Cabin Game Night vocabulary, not copied from the reference page.
 9. Sheep, then pig, as separate commits with their own calibration.

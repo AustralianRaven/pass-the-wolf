@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import type { AnimalDefinition, BodyPart } from '../animals/body';
 import { capsuleRotation } from '../physics/dice-world';
 
@@ -25,6 +26,8 @@ function partMesh(part: BodyPart, material: THREE.Material): THREE.Mesh {
       mesh.position.set(...part.at);
       return mesh;
     }
+    case 'hull':
+      return new THREE.Mesh(new ConvexGeometry(part.points.map((p) => new THREE.Vector3(...p))), material);
   }
 }
 

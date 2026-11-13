@@ -1,7 +1,9 @@
 import type { GameState, TurnRecord } from '../rules/game';
 import { buildScoreCard } from '../rules/scorecard';
 import type { RollResult } from '../rules/scoring';
-import { SEAT_COLOURS, TARGET_CHOICES, type Setup } from '../game/settings';
+import { cpuDice, SEAT_COLOURS, TARGET_CHOICES, type Setup } from '../game/settings';
+import { PICKABLE } from '../animals/registry';
+import { flavourFor, formatTrait, traitsFor } from '../animals/traits';
 import { MAX_SEATS, MIN_SEATS } from '../rules/constants';
 
 /** Tiny element helper: text always goes through textContent, so names can't inject markup. */
@@ -52,6 +54,7 @@ export class GameView {
   private readonly plateBanked: HTMLElement;
   private readonly platePot: HTMLElement;
   private readonly plateRound: HTMLElement;
+  private readonly plateDice: HTMLElement;
   private readonly result: HTMLElement;
   private readonly resultLabel: HTMLElement;
   private readonly resultPoints: HTMLElement;
@@ -78,11 +81,13 @@ export class GameView {
 
     this.plateName = el('h2', { class: 'plate__name' });
     this.plateRound = el('p', { class: 'plate__round' });
+    this.plateDice = el('p', { class: 'plate__dice' });
     this.plateBanked = el('span', { class: 'num' });
     this.platePot = el('span', { class: 'num' });
     const plate = el('section', { class: 'plate', attrs: { 'aria-label': 'Current player' } }, [
       this.plateName,
       this.plateRound,
+      this.plateDice,
       el('dl', { class: 'plate__stats' }, [
         el('div', {}, [el('dt', { text: 'Banked' }), el('dd', {}, [this.plateBanked])]),
         el('div', { class: 'plate__pot' }, [el('dt', { text: 'This turn' }), el('dd', {}, [this.platePot])]),
@@ -213,7 +218,21 @@ export class GameView {
         s.seats.splice(i, 1);
         this.renderSetup();
       });
-      seatList.append(el('li', { class: 'seat' }, [peg, name, kind, remove]));
+      const dice = el('div', { class: 'seat__dice' });
+      ([0, 1] as const).forEach((d) => {
+        const select = el('select', { class: 'seat__die', attrs: { 'aria-label': `Seat ${i + 1} die ${d + 1}` } });
+        for (const a of PICKABLE) {
+          const o = el('option', { text: a.scoring.name, attrs: { value: a.scoring.id } });
+          o.selected = seat.dice[d] === a.scoring.id;
+          select.append(o);
+        }
+        select.addEventListener('change', () => {
+          seat.dice[d] = select.value;
+        });
+        if (d === 1) dice.append(el('span', { class: 'seat__plus', text: '+', attrs: { 'aria-hidden': 'true' } }));
+        dice.append(select);
+      });
+      seatList.append(el('li', { class: 'seat' }, [peg, name, kind, remove, dice]));
     });
 
     const add = el('button', { class: 'tab tab--small', text: s.mode === 'solo' ? 'Add a computer wolf' : 'Add a seat', attrs: { type: 'button' } });
@@ -224,8 +243,8 @@ export class GameView {
       const n = s.seats.length;
       s.seats.push(
         s.mode === 'solo'
-          ? { name: ['Ember', 'Birch', 'Sleet', 'Juniper', 'Flint'][n - 1] ?? 'Wolf', kind: 'cpu', colour }
-          : { name: `Player ${n + 1}`, kind: 'human', colour },
+          ? { name: ['Ember', 'Birch', 'Sleet', 'Juniper', 'Flint'][n - 1] ?? 'Wolf', kind: 'cpu', colour, dice: cpuDice(n - 1) }
+          : { name: `Player ${n + 1}`, kind: 'human', colour, dice: ['warden', 'warden'] },
       );
       this.renderSetup();
     });
@@ -246,10 +265,33 @@ export class GameView {
       brand,
       lede,
       modeGroup,
-      el('div', { class: 'setup__seats' }, [el('h2', { class: 'setup__h', text: 'Seats' }), seatList, add]),
+      el('div', { class: 'setup__seats' }, [el('h2', { class: 'setup__h', text: 'Seats and wolves' }), seatList, add]),
+      this.packGuide(),
       el('div', { class: 'setup__foot' }, [el('label', { class: 'setup__target-label', text: 'Race', attrs: { for: 'target' } }), target, start]),
     );
     this.setupSheet.replaceChildren(form);
+  }
+
+  /** Every wolf's build and how its odds differ from the pack: the strategy reference. */
+  private packGuide(): HTMLElement {
+    const list = el('dl', { class: 'pack__list' });
+    for (const a of PICKABLE) {
+      const id = a.scoring.id;
+      list.append(
+        el('div', { class: 'pack__wolf' }, [
+          el('dt', { class: 'pack__name', text: a.scoring.name }),
+          el('dd', { class: 'pack__flavour', text: flavourFor(id) }),
+          el('dd', { class: 'pack__traits', text: traitsFor(id).map(formatTrait).join(' · ') || 'Right on the pack average.' }),
+        ]),
+      );
+    }
+    const gallery = el('a', { class: 'pack__gallery', text: 'See them in 3D', attrs: { href: `${import.meta.env.BASE_URL}wolves.html`, target: '_blank', rel: 'noopener' } });
+    return el('details', { class: 'pack' }, [
+      el('summary', { class: 'pack__summary', text: 'Meet the pack: how each wolf tumbles' }),
+      el('p', { class: 'pack__note', text: 'Every wolf scores from the same table. Their shapes change the odds. Numbers compare each wolf with the pack average.' }),
+      list,
+      gallery,
+    ]);
   }
 
   private setMode(mode: Setup['mode']): void {
@@ -258,7 +300,7 @@ export class GameView {
     s.mode = mode;
     if (mode === 'solo') {
       s.seats = s.seats.map((seat, i) => ({ ...seat, kind: i === 0 ? 'human' : 'cpu' }));
-      if (s.seats.length < 2) s.seats.push({ name: 'Ember', kind: 'cpu', colour: SEAT_COLOURS[1] });
+      if (s.seats.length < 2) s.seats.push({ name: 'Ember', kind: 'cpu', colour: SEAT_COLOURS[1], dice: cpuDice(0) });
     } else {
       s.seats = s.seats.map((seat, i) => ({ ...seat, kind: 'human', name: seat.kind === 'cpu' ? `Player ${i + 1}` : seat.name }));
     }
@@ -280,6 +322,7 @@ export class GameView {
     this.root.style.setProperty('--active', this.colourOf(state.currentSeat));
     this.plateName.textContent = seat.name;
     this.plateRound.textContent = `Round ${state.round} · ${seat.kind === 'cpu' ? 'Computer' : 'Your throw'}`;
+    this.plateDice.textContent = seat.dice.map((id) => PICKABLE.find((a) => a.scoring.id === id)?.scoring.name ?? id).join(' + ');
     this.plateBanked.textContent = String(state.scores[state.currentSeat] ?? 0);
     this.platePot.textContent = String(state.turnPot);
     this.rollButton.disabled = !opts.canRoll;

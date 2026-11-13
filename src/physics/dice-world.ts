@@ -96,6 +96,12 @@ function partCollider(R: Rapier, part: BodyPart): RAPIER_NS.ColliderDesc {
     case 'box':
       desc = R.ColliderDesc.cuboid(...part.half).setTranslation(...part.at);
       break;
+    case 'hull': {
+      const hull = R.ColliderDesc.convexHull(new Float32Array(part.points.flat()));
+      if (!hull) throw new Error('Degenerate convex hull in animal part list.');
+      desc = hull;
+      break;
+    }
   }
   return desc.setDensity(part.density ?? 1).setFriction(WOOD.friction).setRestitution(WOOD.restitution);
 }

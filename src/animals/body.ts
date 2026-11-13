@@ -11,7 +11,9 @@ export type Vec3 = readonly [number, number, number];
 export type BodyPart =
   | { readonly kind: 'capsule'; readonly from: Vec3; readonly to: Vec3; readonly radius: number; readonly density?: number }
   | { readonly kind: 'ball'; readonly at: Vec3; readonly radius: number; readonly density?: number }
-  | { readonly kind: 'box'; readonly at: Vec3; readonly half: Vec3; readonly density?: number };
+  | { readonly kind: 'box'; readonly at: Vec3; readonly half: Vec3; readonly density?: number }
+  /** Convex hull of a point cloud (used for sculpted animals). */
+  | { readonly kind: 'hull'; readonly points: readonly Vec3[]; readonly density?: number };
 
 export interface AnimalPalette {
   /** Main carved-wood colour. */
@@ -26,4 +28,6 @@ export interface AnimalDefinition {
   readonly palette: AnimalPalette;
   /** Where the flank mark sits, on the +Z side of the body. */
   readonly markAt: Vec3;
+  /** Shown in the dice picker. */
+  readonly pitch?: string;
 }

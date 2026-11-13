@@ -5,7 +5,7 @@ import { GameController } from './game/controller';
 import { readDebugFlags } from './game/debug';
 import { loadSetup } from './game/settings';
 import { loadRapier } from './physics/dice-world';
-import { TableScene } from './render/scene';
+import { prewarmDirewolves, TableScene } from './render/scene';
 import { GameView } from './ui/view';
 
 async function boot(): Promise<void> {
@@ -27,6 +27,7 @@ async function boot(): Promise<void> {
   const R = await loadRapier();
   controller = new GameController(R, scene, view, readDebugFlags());
   document.documentElement.dataset.ready = 'true';
+  prewarmDirewolves();
 }
 
 boot().catch((err: unknown) => {

@@ -22,6 +22,11 @@ npm run dev        # http://localhost:5173
 | `npm run check` | Typecheck, lint and unit tests |
 | `npm run e2e` | Playwright end-to-end tests (run locally before committing; not run in CI) |
 | `npm run calibrate` | Headless throw simulation; prints pose frequencies |
+| `sh tools/odds.sh <wolf>` | Quick 150-throw odds probe for one direwolf |
+
+## The pack
+
+Five sculpted direwolves: Warden, Stalker, Frostmane, Timber Runner and Old Grizzle. Each seat picks any two. They score from one table but tumble differently; see `docs/calibration.md`. The 3D gallery is at `/wolves.html`.
 
 ## Brand
 

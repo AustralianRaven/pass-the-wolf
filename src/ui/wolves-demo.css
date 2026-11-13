@@ -1,0 +1,85 @@
+/* Direwolf picker: turntables on the blanket, numbered pine cards along the bottom. */
+.picker__head {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  pointer-events: none;
+}
+.picker__head .wordmark {
+  font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+}
+.picker__head p {
+  margin: 6px 0 0;
+  color: var(--cream-dim);
+}
+.picker__cards {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pick {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto auto;
+  column-gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  color: var(--groove);
+  background: var(--pine-grain);
+  box-shadow:
+    inset 0 1px 0 rgb(255 240 210 / 0.45),
+    inset 0 -3px 0 rgb(90 50 20 / 0.45),
+    0 8px 18px -6px rgb(0 0 0 / 0.7);
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out);
+}
+.pick:hover {
+  transform: translateY(-3px);
+}
+.pick[aria-pressed='true'] {
+  background: var(--cream);
+  box-shadow:
+    0 0 0 3px var(--brass),
+    0 8px 18px -6px rgb(0 0 0 / 0.7);
+}
+.pick__num {
+  grid-row: span 3;
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: var(--groove);
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+.pick__name {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+.pick__pitch {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: #4a3420;
+}
+.pick__traits {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6e1010;
+  font-variant-numeric: tabular-nums;
+}

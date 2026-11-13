@@ -524,7 +524,7 @@ button {
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center;
+  place-items: safe center;
   padding: 24px;
   overflow-y: auto;
   background:
@@ -714,4 +714,91 @@ button {
   .tab {
     transition: none;
   }
+}
+
+/* ---------- Dice choice per seat ---------- */
+.seat__dice {
+  grid-column: 2 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -2px 0 6px;
+}
+.seat__die {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid rgb(201 150 91 / 0.35);
+  background: var(--ink-2);
+  color: var(--cream);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.seat__plus {
+  font-family: var(--font-display);
+  color: var(--pine);
+}
+.plate__dice {
+  margin: -6px 0 10px;
+  font-size: 0.8rem;
+  color: var(--pine-light);
+}
+
+/* ---------- Meet the pack ---------- */
+.pack {
+  margin: 0 0 22px;
+  border-radius: 8px;
+  background: var(--ink-2);
+  border: 1px solid rgb(201 150 91 / 0.25);
+}
+.pack__summary {
+  padding: 12px 14px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--pine);
+  cursor: pointer;
+}
+.pack[open] .pack__summary {
+  border-bottom: 1px solid rgb(201 150 91 / 0.2);
+}
+.pack__note {
+  margin: 12px 14px 4px;
+  font-size: 0.85rem;
+  color: var(--cream-dim);
+}
+.pack__list {
+  display: grid;
+  gap: 12px;
+  margin: 8px 14px 12px;
+}
+.pack__wolf {
+  display: grid;
+  gap: 2px;
+}
+.pack__name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+.pack__flavour,
+.pack__traits {
+  margin: 0;
+  font-size: 0.86rem;
+}
+.pack__flavour {
+  color: var(--cream-dim);
+  max-width: 62ch;
+}
+.pack__traits {
+  color: var(--brass);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.pack__gallery {
+  display: inline-block;
+  margin: 0 14px 14px;
+  color: var(--pine-light);
+  text-underline-offset: 3px;
 }

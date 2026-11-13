@@ -1,0 +1,97 @@
+{
+  "warden": {
+    "throws": 1500,
+    "posePct": {
+      "sideMarkUp": 36.3,
+      "sideMarkDown": 35.3,
+      "back": 15.93,
+      "upright": 9.53,
+      "noseDown": 2.77,
+      "tailDown": 0.17
+    },
+    "resultPct": {
+      "score": 44.93,
+      "den": 25.53,
+      "scattered": 24.93,
+      "double": 4.13,
+      "tangled": 0.47
+    },
+    "avgPointsPerRoll": 3.83
+  },
+  "stalker": {
+    "throws": 1500,
+    "posePct": {
+      "sideMarkUp": 35.43,
+      "sideMarkDown": 34.27,
+      "back": 17.73,
+      "upright": 12.33,
+      "noseDown": 0.1,
+      "tailDown": 0.13
+    },
+    "resultPct": {
+      "score": 46.8,
+      "den": 24.33,
+      "scattered": 24.2,
+      "double": 4.53,
+      "tangled": 0.13
+    },
+    "avgPointsPerRoll": 3.77
+  },
+  "frostmane": {
+    "throws": 1500,
+    "posePct": {
+      "sideMarkUp": 42.43,
+      "sideMarkDown": 38.33,
+      "back": 0.93,
+      "upright": 9.87,
+      "noseDown": 5,
+      "tailDown": 3.43
+    },
+    "resultPct": {
+      "den": 34.13,
+      "score": 32.8,
+      "scattered": 30.8,
+      "double": 1.47,
+      "tangled": 0.8
+    },
+    "avgPointsPerRoll": 3.99
+  },
+  "runner": {
+    "throws": 1500,
+    "posePct": {
+      "sideMarkUp": 38.67,
+      "sideMarkDown": 33.2,
+      "back": 16.27,
+      "upright": 11.13,
+      "noseDown": 0.33,
+      "tailDown": 0.4
+    },
+    "resultPct": {
+      "score": 42.53,
+      "scattered": 26.33,
+      "den": 26.07,
+      "double": 4.6,
+      "tangled": 0.47
+    },
+    "avgPointsPerRoll": 3.67
+  },
+  "grizzle": {
+    "throws": 1500,
+    "posePct": {
+      "sideMarkUp": 34,
+      "sideMarkDown": 34.33,
+      "back": 19.67,
+      "upright": 8.63,
+      "noseDown": 3.13,
+      "tailDown": 0.23
+    },
+    "resultPct": {
+      "score": 46.87,
+      "den": 24,
+      "scattered": 23.33,
+      "double": 5.53,
+      "tangled": 0.27
+    },
+    "avgPointsPerRoll": 4.33
+  }
+}

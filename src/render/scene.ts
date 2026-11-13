@@ -1,8 +1,27 @@
 import * as THREE from 'three';
 import type { AnimalDefinition } from '../animals/body';
 import { ARENA, type DiceWorld } from '../physics/dice-world';
+import { DIREWOLVES } from '../animals/direwolves';
 import { createDieMesh, setCollarColour } from './die-mesh';
+import { createDirewolfMesh, requestDirewolfGeometry } from './direwolf-mesh';
 import { pineTexture, woolTexture } from './textures';
+
+/** In-game detail: the dice are small on screen, so a coarser sculpt builds faster. */
+export const GAME_STEP = 0.014;
+
+function meshFor(animal: AnimalDefinition, collar: string): THREE.Group {
+  const design = DIREWOLVES.find((d) => d.id === animal.scoring.id);
+  if (!design) return createDieMesh(animal, collar);
+  // Until the sculpted body is carved, show the collider hulls in the wolf's coat colour.
+  const placeholder = createDieMesh(animal, collar);
+  placeholder.getObjectByName('collar')?.removeFromParent();
+  return createDirewolfMesh(design, { step: GAME_STEP, collar, async: true, placeholder });
+}
+
+/** Start carving every direwolf in a background worker as soon as the page loads. */
+export function prewarmDirewolves(): void {
+  for (const d of DIREWOLVES) void requestDirewolfGeometry(d, GAME_STEP);
+}
 
 /** Three.js view of the table: wool blanket, pine tray, two carved dice, warm lamp light. */
 export class TableScene {
@@ -102,7 +121,7 @@ export class TableScene {
   setDice(animals: readonly [AnimalDefinition, AnimalDefinition], collar: string): void {
     for (const m of this.dieMeshes) this.scene.remove(m);
     this.dieMeshes = animals.map((a) => {
-      const m = createDieMesh(a, collar);
+      const m = meshFor(a, collar);
       this.scene.add(m);
       return m;
     });
