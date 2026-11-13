@@ -1,0 +1,16 @@
+:root {
+  --wool-red: #9e1b1b;
+  --ink: #1a1714;
+  --pine: #c9965b;
+  --cream: #e9dcc4;
+  --forest: #2f4a3a;
+  --font-display: 'Alfa Slab One', serif;
+  --font-body: 'Figtree Variable', system-ui, sans-serif;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--ink); color: var(--cream); font-family: var(--font-body); }
+.shell { display: grid; place-content: center; min-height: 100%; text-align: center; }
+.wordmark { font-family: var(--font-display); font-weight: 400; text-transform: uppercase; letter-spacing: 0.02em; }
+.wordmark span { color: #d8473a; }

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="t">
+  <title id="t">Pass the Wolf: two wolves tumbling</title>
+  <defs>
+    <pattern id="check" width="64" height="64" patternUnits="userSpaceOnUse">
+      <rect width="64" height="64" fill="#9e1b1b"/>
+      <rect width="32" height="64" fill="#1a1714" opacity="0.38"/>
+      <rect width="64" height="32" fill="#1a1714" opacity="0.38"/>
+    </pattern>
+    <path id="wolf" d="M40 44 C64 34 96 32 118 34 C126 26 134 20 140 18 L145 4 L152 17 C160 18 168 23 175 28 L190 33 C192 38 188 42 182 42 L168 44 C164 50 158 54 154 56 C156 62 152 66 148 68 L150 104 L156 109 L138 109 L136 80 L132 106 L122 106 L122 76 C106 80 86 80 72 74 L78 103 L85 109 L66 109 L60 88 L54 106 L43 106 L44 82 C40 74 38 66 38 60 C30 66 22 80 18 98 C15 106 6 104 6 96 C6 78 14 60 24 52 C30 47 34 45 40 44 Z"/>
+    <clipPath id="disc"><circle cx="256" cy="256" r="232"/></clipPath>
+  </defs>
+  <circle cx="256" cy="256" r="248" fill="#1a1714"/>
+  <g clip-path="url(#disc)">
+    <rect width="512" height="512" fill="url(#check)"/>
+  </g>
+  <circle cx="256" cy="256" r="232" fill="none" stroke="#c9965b" stroke-width="6"/>
+  <!-- motion arcs -->
+  <g fill="none" stroke="#e9dcc4" stroke-linecap="round" stroke-width="9" opacity="0.9">
+    <path d="M84 222 A176 176 0 0 1 176 96"/>
+    <path d="M122 230 A136 136 0 0 1 186 140" opacity="0.55"/>
+    <path d="M428 290 A176 176 0 0 1 336 416"/>
+    <path d="M390 282 A136 136 0 0 1 326 372" opacity="0.55"/>
+  </g>
+  <!-- wolf one: tumbling forward, nose dipping -->
+  <g transform="translate(206 96) rotate(26 100 56) scale(1.22)">
+    <use href="#wolf" fill="#1a1714" transform="translate(5 7)" opacity="0.55"/>
+    <use href="#wolf" fill="#e9dcc4"/>
+    <path d="M90 48 a11 11 0 1 0 9 18 a9 9 0 1 1 -9 -18 z" fill="#9e1b1b"/>
+  </g>
+  <!-- wolf two: flipped over, mid-roll -->
+  <g transform="translate(64 262) rotate(-150 100 56) scale(1.22)">
+    <use href="#wolf" fill="#1a1714" transform="translate(-5 -7)" opacity="0.55"/>
+    <use href="#wolf" fill="#c9965b"/>
+    <path d="M90 48 a11 11 0 1 0 9 18 a9 9 0 1 1 -9 -18 z" fill="#1a1714"/>
+  </g>
+</svg>
