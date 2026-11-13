@@ -164,10 +164,12 @@ button {
   padding: 14px 18px 16px;
   border-radius: 10px;
   background: rgb(26 23 20 / 0.86);
-  border-top: 4px solid var(--active);
   box-shadow: 0 12px 30px -10px rgb(0 0 0 / 0.7);
 }
 .plate__name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
@@ -175,6 +177,16 @@ button {
   line-height: 1.05;
   color: var(--cream);
   overflow-wrap: anywhere;
+}
+/* The active seat's brass-rimmed peg, matching its pegboard lane. */
+.plate__name::before {
+  content: '';
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--active);
+  box-shadow: 0 0 0 2px var(--brass), 0 2px 4px rgb(0 0 0 / 0.5);
 }
 .plate__round {
   margin: 4px 0 10px;

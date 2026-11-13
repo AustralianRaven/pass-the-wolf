@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/ui/styles.css"
+        ],
+        "createdAt": "2026-11-13T06:01:59.626Z",
+        "reason": "Claude triage: .tab at L96 has border: 0 and only a full-width inset bottom bevel (routed pine button); no side accent border exists in this file"
+      }
+    ]
+  }
+}
