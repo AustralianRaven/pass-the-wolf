@@ -37,32 +37,6 @@ export interface WolfDesign {
   readonly width: number;
   /** Optional density of the head and muzzle (default: carved light, 0.4). */
   readonly headWeight?: number;
-  /** Physics-only shaping that tunes the odds without changing the look. See docs/calibration.md. */
-  readonly tune?: WolfTune;
-}
-
-export interface WolfTune {
-  /** Half-size of the flat pad under the haunches the wolf sits back on to Howl (0 = none). */
-  readonly rump?: number;
-  /** Half-width (Z) of the flat pad along the spine that lets it rest on its back. */
-  readonly spine?: number;
-  /**
-   * The invisible pig-shaped belly around the torso, as ellipsoid radii [length, height, width].
-   * It gives the die real-pig-like rolling odds while the visible wolf stays slim.
-   */
-  readonly belly?: readonly [number, number, number];
-  /** Move the belly toward the marked flank (+Z): the wolf then lands mark-down (plain side up) more often. */
-  readonly bellyShift?: number;
-  /** Height of a flat invisible roof over the back and head, like a pig's back: lets it lie on its back (Play Dead). 0 = none. */
-  readonly roof?: number;
-  /** Half-width of the roof (Z). A broad back rests steadily, like a pig's. */
-  readonly roofWidth?: number;
-  /** Half-width (Z) of an invisible plate under the paws: a wider stance lands it on its feet (Prowl) more often. 0 = none. */
-  readonly stance?: number;
-  /** Density of the head and muzzle: heavier tips it nose-first (Sniff, Pounce) more often. */
-  readonly head?: number;
-  /** Density of the lower legs relative to the body: heavier feet land it upright more often. */
-  readonly feet?: number;
 }
 
 interface Leg {
@@ -223,7 +197,6 @@ export const WINTER_WOLF_DESIGN: WolfDesign = {
   fur: 0.013,
   width: 1,
   coat: { base: '#e3e0d8', saddle: '#a9a69f', under: '#f6f3ec', grizzle: 0.15, mark: '#4e3a86' },
-  tune: { belly: [0.46, 0.3, 0.36], roof: 0.98, roofWidth: 0.42, stance: 0.24, rump: 0.06, spine: 0.12, feet: 6, head: 0.65 },
 };
 
 /** Every wolf design the game can carve, in picker order. */

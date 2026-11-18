@@ -193,13 +193,13 @@ export class DiceWorld {
     const startZ = -dirZ * (ARENA.apothem - 1.6);
 
     this.dice.forEach((die, i) => {
-      const offset = (i === 0 ? -1 : 1) * 1.0;
+      const offset = (i === 0 ? -1 : 1) * 0.85;
       const yaw = rng() * Math.PI * 2;
       const pitch = (rng() - 0.5) * Math.PI;
       const roll = rng() * Math.PI * 2;
       die.body.setTranslation({ x: startX - dirZ * offset, y: 2.2 + rng() * 0.6, z: startZ + dirX * offset }, true);
       die.body.setRotation(eulerToQuat(pitch, yaw, roll), true);
-      const spread = (i === 0 ? -1 : 1) * (0.12 + rng() * 0.25);
+      const spread = (i === 0 ? -1 : 1) * (0.06 + rng() * 0.15);
       const v = speed * (0.9 + rng() * 0.2);
       die.body.setLinvel(
         { x: v * Math.cos(input.angle + spread), y: 6 + rng() * 6, z: v * Math.sin(input.angle + spread) },

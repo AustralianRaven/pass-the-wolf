@@ -1,3 +1,3 @@
 #!/bin/sh
-# Quick pose odds for one die: tools/odds.sh [id=winter] [throws=1500] ['{"rump":0.06}']
+# Quick pose odds for one die: tools/odds.sh [id=winter] [throws=1500] ['{"seat":0.04}']  (tunes the shared pig hitbox)
 npx tsx tools/calibrate.ts "${2:-1500}" "${1:-winter}" "${1:-winter}" --json ${3:+--tune=$3} 2>/dev/null | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s.slice(s.indexOf('{')));const p=j.posePct,r=j.resultPct;console.log('plain',p.sideMarkDown,'moon',p.sideMarkUp,'back',p.back,'up',p.upright,'nose',p.noseDown,'lean',p.lean,'howl',p.tailDown,'| scat',r.scattered,'den',r.den,'tangled',r.tangled??0,'alpha',r.alpha??0,'| avg',j.avgPointsPerRoll,'|',j.seconds+'s')})"

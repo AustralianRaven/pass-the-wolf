@@ -24,7 +24,10 @@ export interface AnimalPalette {
 
 export interface AnimalDefinition {
   readonly scoring: AnimalScoring;
+  /** The physics hitbox. Display-only animals share the pig hitbox (src/animals/pig-hitbox.ts). */
   readonly parts: readonly BodyPart[];
+  /** How the visible model sits inside the hitbox: a uniform scale, then an offset in body units. */
+  readonly fit?: { readonly scale: number; readonly offset: Vec3 };
   readonly palette: AnimalPalette;
   /** Where the flank mark sits, on the +Z side of the body. */
   readonly markAt: Vec3;

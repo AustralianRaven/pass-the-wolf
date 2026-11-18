@@ -7,8 +7,7 @@
  */
 import { setPriority, constants } from 'node:os';
 import { getAnimal } from '../src/animals/registry';
-import { WOLF_DESIGNS } from '../src/animals/wolf-design';
-import { wolfDie } from '../src/animals/wolf-dice';
+import { PIG_TUNE, pigHitbox, type PigTune } from '../src/animals/pig-hitbox';
 import { classifyPose, localUp } from '../src/physics/classify';
 import { DiceWorld, loadRapier } from '../src/physics/dice-world';
 import { createRng } from '../src/physics/rng';
@@ -22,8 +21,8 @@ try {
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const throws = Number(args[0] ?? 400);
 const tuneArg = process.argv.find((a) => a.startsWith('--tune='));
-const design = WOLF_DESIGNS.find((d) => d.id === (args[1] ?? 'winter'));
-const animal = tuneArg && design ? wolfDie(design, JSON.parse(tuneArg.slice(7)) as Record<string, number>) : getAnimal(args[1] ?? 'winter');
+const base = getAnimal(args[1] ?? 'winter');
+const animal = tuneArg ? { ...base, parts: pigHitbox({ ...PIG_TUNE, ...(JSON.parse(tuneArg.slice(7)) as Partial<PigTune>) }) } : base;
 const R = await loadRapier();
 const rng = createRng(777);
 

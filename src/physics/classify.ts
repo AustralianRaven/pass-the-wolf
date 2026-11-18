@@ -21,7 +21,7 @@ const NOSE_AXIS = 0.6;
  * (Pounce). Shallower snout-down tilts are a wolf lying on its side with its nose dipped.
  * Both values sit in gaps between the winter wolf's measured rest states (tools/rests.ts --nose).
  */
-const LEAN_NOSE = 0.6;
+const LEAN_NOSE = 0.55;
 const LEAN_TILT = 0.5;
 
 /**

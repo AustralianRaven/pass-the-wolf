@@ -1,35 +1,47 @@
 # Calibration
 
-## Status (2026-11-18): hitbox tuning in progress, NOT yet on target
+## Status (2026-11-18): shared pig hitbox, 5 of 7 poses on target
 
-The winter wolf now rolls on an **invisible hitbox** (see issue #1): the wolf's real head, legs, ears and
-tail, plus hidden pads that only the physics sees: a pig-shaped belly, a flat roof over back and head,
-a stance plate under the paws, a spine pad and a rump seat. The visible wolf is slim and is lifted or
-dropped each frame so its lowest point matches the hitbox's lowest point. Turn on Settings → Debug mode →
-Show hitboxes to see the real shapes (gold = hidden pads).
+Every animal is **display-only** and rolls on one shared, invisible **pig hitbox**
+(`src/animals/pig-hitbox.ts`, tuning in `PIG_TUNE`). A new animal is just a visible model plus a
+`fit` (scale and offset); it inherits the pig's odds with no physics work. The visible model is
+lifted or dropped each frame so its lowest point matches the hitbox's. Settings → Debug mode → Show
+hitboxes draws the pig in gold.
 
-Targets (per wolf, Kern 2006 with the Howl added): Plain side 34.8%, Moon side 30.0%, Play Dead 22.4%,
-Prowl 8.8%, Sniff 3.0%, Pounce 0.6%, Howl 0.4%. Per roll: Tangled 1.6%, Alpha 0.05%. Tolerance ±10% of
-each target, auto-roll only.
+Targets live in `src/animals/wolf-targets.ts` (Kern 2006 single-pig odds plus the sitting Howl),
+tolerance ±10% of each target, auto-roll only.
 
-Current tuning (`WINTER_WOLF_DESIGN.tune`), 800 throws:
+Latest run: 10,000 throws (4 seeds × 2,500), `PIG_TUNE` as committed:
 
-| Plain | Moon | Play Dead | Prowl | Sniff | Pounce | Howl | Tangled | Alpha |
-|---|---|---|---|---|---|---|---|---|
-| 33.3 | 33.3 | **11.1** | 9.6 | **9.2** | **0.19** | **3.3** | 1.63 | 0.13 (1 seen) |
+| Pose | Measured | Target | Band |
+|---|---|---|---|
+| Plain side | 31.37% | 34.8% | in |
+| Moon side | 31.36% | 30.0% | in |
+| Play Dead | 23.23% | 22.4% | in |
+| Prowl | 9.39% | 8.8% | in |
+| Sniff | 3.54% | 3.0% | **out** (max 3.3) |
+| Pounce | 0.63% | 0.6% | in |
+| Howl | 0.49% | 0.4% | **out** (max 0.44) |
+| Tangled (per roll) | 2.51% | 1.6% | **out** |
+| Alpha (per roll) | 0 in 10,000 | 0.05% | **out** |
 
-Bold = outside its band. Learned so far:
+Next steps:
 
-- A wider roof raises Play Dead, but its front edge also makes a stable nose-down tripod (Sniff too high).
-  Next: keep the roof's front edge behind the head, or round its ends.
-- The rump seat at 0.05–0.07 gives a Howl of 3–5%. Next: shrink it (around 0.02) or move it lower.
-- Belly width barely changes the side share; the roof width and the stance plate do.
-- Pounce boundary: `classify.ts` LEAN_NOSE / LEAN_TILT, set from `tools/rests.ts --nose`.
+- **Sniff:** front legs further forward (`legAt[0]` 0.26 gave 2.69%, 0.25 gave 3.44%).
+- **Howl:** hind legs a touch further back (`hindX`), or the body a touch further forward (`bodyX`).
+- **Alpha and Tangled together:** two round pigs almost never stack fully. Proposal: count a die left
+  propped on the other, its centre clearly above the other's, as Alpha. Tune that height so Alpha
+  reaches 0.05% and Tangled falls toward 1.6%.
+- **Side asymmetry:** sides measure 31.4 / 31.4; the target is 34.8 / 30.0. Try `bodyShift`.
+- Confirm with 20,000 throws, then run Alpha overnight (~800,000).
 
-Workflow: `sh tools/odds.sh winter 800 '{"roofWidth":0.4}'` tries a tuning without editing code.
-Several can run in parallel (one core each, below-normal priority). `npx tsx tools/calibrate.ts N winter
---dump=calibration/x.json` saves every rest for offline re-classification. Confirm with 20,000 throws;
-Alpha needs ~800,000 (run overnight).
+Workflow:
+
+- `sh tools/odds.sh winter 800 '{"legAt":[0.26,0.17]}'` tries a pig tuning without editing code.
+  Up to four at once is fine (one core each, below-normal priority).
+- `npx tsx tools/calibrate.ts 2500 winter --seed=N --dump=calibration/x-N.json` in parallel for big runs.
+- `npx tsx tools/fit-poses.ts calibration/*.json --leanNose=0.55` re-classifies saved rests instantly,
+  for setting the Sniff / Pounce / Howl boundaries in `src/physics/classify.ts`.
 
 ---
 

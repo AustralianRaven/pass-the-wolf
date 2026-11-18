@@ -15,7 +15,15 @@ function meshFor(animal: AnimalDefinition, collar: string): THREE.Group {
   // Until the sculpted body is carved, show the collider hulls in the wolf's coat colour.
   const placeholder = createDieMesh(animal, collar);
   placeholder.getObjectByName('collar')?.removeFromParent();
-  return createWolfMesh(design, { step: GAME_STEP, collar, async: true, placeholder });
+  const model = createWolfMesh(design, { step: GAME_STEP, collar, async: true, placeholder });
+  // Display-only animal: fitted inside the shared hitbox by its own scale and offset.
+  const fit = animal.fit ?? { scale: 1, offset: [0, 0, 0] as const };
+  model.scale.setScalar(fit.scale);
+  model.position.set(...fit.offset);
+  model.name = 'model';
+  const group = new THREE.Group();
+  group.add(model);
+  return group;
 }
 
 /** Body-frame sample of the physics hitbox, used to keep the visible animal on the felt. */
@@ -28,14 +36,18 @@ function hitboxPoints(animal: AnimalDefinition): THREE.Vector3[] {
   return out;
 }
 
-/** Body-frame sample of a carved mesh's vertices (every nth), once its geometry has arrived. */
+/** Body-frame sample of a carved mesh's vertices (every nth, fit applied), once its geometry has arrived. */
 function meshPoints(group: THREE.Group): THREE.Vector3[] | null {
-  const body = group.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh);
+  const model = group.getObjectByName('model') ?? group;
+  const body = model.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh);
   const pos = body?.geometry.getAttribute('position');
-  if (!pos || pos.count === 0) return null;
+  if (!body || !pos || pos.count === 0) return null;
+  model.updateMatrix();
+  body.updateMatrix();
+  const toBody = new THREE.Matrix4().multiplyMatrices(model === group ? new THREE.Matrix4() : model.matrix, body.matrix);
   const stride = Math.max(1, Math.floor(pos.count / 600));
   const out: THREE.Vector3[] = [];
-  for (let i = 0; i < pos.count; i += stride) out.push(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)));
+  for (let i = 0; i < pos.count; i += stride) out.push(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)).applyMatrix4(toBody));
   return out;
 }
 
