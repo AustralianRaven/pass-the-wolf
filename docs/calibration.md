@@ -1,47 +1,70 @@
 # Calibration
 
-## Status (2026-11-18): shared pig hitbox, 5 of 7 poses on target
+## Status (2026-11-18): on target
 
 Every animal is **display-only** and rolls on one shared, invisible **pig hitbox**
-(`src/animals/pig-hitbox.ts`, tuning in `PIG_TUNE`). A new animal is just a visible model plus a
-`fit` (scale and offset); it inherits the pig's odds with no physics work. The visible model is
-lifted or dropped each frame so its lowest point matches the hitbox's. Settings → Debug mode → Show
-hitboxes draws the pig in gold.
+(`src/animals/pig-hitbox.ts`, tuning in `PIG_TUNE`). A new animal is a visible model plus a `fit`
+(scale and offset); it inherits the pig's odds with no physics work. The visible model is lifted or
+dropped each frame so its lowest point matches the hitbox's. Settings → Debug mode → Show hitboxes
+draws the pig in gold.
 
-Targets live in `src/animals/wolf-targets.ts` (Kern 2006 single-pig odds plus the sitting Howl),
-tolerance ±10% of each target, auto-roll only.
+The odds are measured on the **Auto-roll** throw only (`autoRollInput` in `dice-world.ts`): the
+Auto-roll button and the computer players throw exactly this way. Hand throws are not held to the table.
 
-Latest run: 10,000 throws (4 seeds × 2,500), `PIG_TUNE` as committed:
+Targets: `src/animals/wolf-targets.ts` (Kern 2006 single-pig odds plus the sitting Howl), ±10% of each.
 
-| Pose | Measured | Target | Band |
+### Final record: 20,000 fresh throws (`src/animals/pig-odds.json`)
+
+| Result | Measured | Target | Band |
 |---|---|---|---|
-| Plain side | 31.37% | 34.8% | in |
-| Moon side | 31.36% | 30.0% | in |
-| Play Dead | 23.23% | 22.4% | in |
-| Prowl | 9.39% | 8.8% | in |
-| Sniff | 3.54% | 3.0% | **out** (max 3.3) |
-| Pounce | 0.63% | 0.6% | in |
-| Howl | 0.49% | 0.4% | **out** (max 0.44) |
-| Tangled (per roll) | 2.51% | 1.6% | **out** |
-| Alpha (per roll) | 0 in 10,000 | 0.05% | **out** |
+| Plain side | 33.63% | 34.8% | in |
+| Moon side | 32.51% | 30.0% | in |
+| Play Dead | 21.42% | 22.4% | in |
+| Prowl | 8.45% | 8.8% | in |
+| Sniff | 3.01% | 3.0% | in |
+| Pounce | 0.61% | 0.6% | in |
+| Howl | 0.38% | 0.4% | in |
+| Tangled (per roll) | 1.64% | 1.6% | in |
+| Alpha (per roll) | 0.04% (8 events) | 0.05% | needs the 800,000-throw run |
 
-Next steps:
+Scattered 21.7% of rolls; 4.7 points per roll on average.
 
-- **Sniff:** front legs further forward (`legAt[0]` 0.26 gave 2.69%, 0.25 gave 3.44%).
-- **Howl:** hind legs a touch further back (`hindX`), or the body a touch further forward (`bodyX`).
-- **Alpha and Tangled together:** two round pigs almost never stack fully. Proposal: count a die left
-  propped on the other, its centre clearly above the other's, as Alpha. Tune that height so Alpha
-  reaches 0.05% and Tangled falls toward 1.6%.
-- **Side asymmetry:** sides measure 31.4 / 31.4; the target is 34.8 / 30.0. Try `bodyShift`.
-- Confirm with 20,000 throws, then run Alpha overnight (~800,000).
+`tests/unit/odds.test.ts` checks this record against the targets, and fails if the pig tuning, the pose
+boundaries or the Alpha rule changed since it was measured. It checks Alpha only once the record holds
+800,000+ throws.
 
-Workflow:
+### Pose boundaries (`src/physics/classify.ts`), fitted on saved rests
 
-- `sh tools/odds.sh winter 800 '{"legAt":[0.26,0.17]}'` tries a pig tuning without editing code.
-  Up to four at once is fine (one core each, below-normal priority).
-- `npx tsx tools/calibrate.ts 2500 winter --seed=N --dump=calibration/x-N.json` in parallel for big runs.
-- `npx tsx tools/fit-poses.ts calibration/*.json --leanNose=0.55` re-classifies saved rests instantly,
-  for setting the Sniff / Pounce / Howl boundaries in `src/physics/classify.ts`.
+- **Howl (sit):** snout within ~32° of straight up (`SIT_AXIS` 0.85). Shallower snout-up tilts are a
+  wolf lying tipped back.
+- **Pounce (lean):** snout down past `LEAN_NOSE` 0.61 and tipped onto a shoulder past `LEAN_TILT` 0.5.
+- **Sniff:** snout down past `NOSE_AXIS` 0.6, square.
+- **Alpha:** touching, and the packmate carries at least `ALPHA_SUPPORT` 0.37 of the wolf's weight
+  (from contact impulses), or one wolf is off the felt entirely.
+
+### How the pig was tuned
+
+1. Sweeps at 800 throws (`sh tools/odds.sh winter 800 '<tune json>'`) to find the levers:
+   - body width trades the sides against Play Dead;
+   - the hind legs and the body's fore-aft position control sitting (Howl);
+   - the front legs control the snout tripod (Sniff);
+   - thinner, lighter feet lower Prowl.
+2. Full checks at 10,000 throws (`sh tools/calibrate-full.sh <name> '<tune json>'`, four seeded
+   batches in parallel, the same seeds for every candidate so differences are the shape, not luck).
+3. Boundaries fitted offline on saved rests: `npx tsx tools/fit-poses.ts calibration/*.json`.
+4. A clean 20,000-throw record on fresh seeds: `npx tsx tools/record-odds.ts <reports>`.
+
+`tools/tune-pig.mjs` is an automatic hill-climber over the same knobs, for future retuning.
+
+### Re-run after any change to the pig, the throw profile or the classifier
+
+```bash
+for sd in 1001 2002 3003 4004; do node --import tsx tools/calibrate.ts 5000 winter winter --json --seed=$sd > calibration/record-$sd.report.json & done; wait
+npx tsx tools/record-odds.ts calibration/record-*.report.json
+npm test
+```
+
+For Alpha, add an 800,000-throw run (overnight; four batches of 200,000) to the same record.
 
 ---
 

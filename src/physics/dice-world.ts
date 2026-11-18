@@ -49,6 +49,12 @@ const REST_STEPS = 60;
 export const MAX_STEPS = 240 * 12;
 /** Contact gap that still counts as "touching". */
 const TOUCH_DISTANCE = 0.02;
+/**
+ * A die counts as riding the other (Alpha) when the other holds up at least this share of its
+ * weight. A full stack is 1; a wolf propped on its packmate is part-way. Fitted on 20,000 saved
+ * throws so Alpha lands at its target rate (docs/calibration.md).
+ */
+export const ALPHA_SUPPORT = 0.37;
 
 export interface ThrowInput {
   /** Launch heading in radians on the table plane; 0 throws toward +X. */
@@ -59,10 +65,23 @@ export interface ThrowInput {
   readonly seed: number;
 }
 
+/** Straight up the table, away from the player's edge. */
+export const AUTO_ANGLE = -Math.PI / 2;
+
+/**
+ * The Auto-roll throw: the one profile the odds are tuned and tested against. The Roll button,
+ * the computer players and the calibration tools all throw this way; only hand throws differ.
+ */
+export function autoRollInput(rng: () => number): Omit<ThrowInput, 'seed'> {
+  return { angle: AUTO_ANGLE + (rng() - 0.5) * 0.3, power: 0.55 + rng() * 0.3 };
+}
+
 export interface SettledDice {
   readonly poses: readonly [GenericPose, GenericPose];
   readonly touching: boolean;
   readonly stacked: boolean;
+  /** The largest share of either die's weight the other die holds up (0 when apart). */
+  readonly support: number;
   /** True when the dice stopped by themselves rather than by timeout. */
   readonly settled: boolean;
   readonly steps: number;
@@ -193,7 +212,7 @@ export class DiceWorld {
     const startZ = -dirZ * (ARENA.apothem - 1.6);
 
     this.dice.forEach((die, i) => {
-      const offset = (i === 0 ? -1 : 1) * 0.85;
+      const offset = (i === 0 ? -1 : 1) * 1.1;
       const yaw = rng() * Math.PI * 2;
       const pitch = (rng() - 0.5) * Math.PI;
       const roll = rng() * Math.PI * 2;
@@ -207,6 +226,46 @@ export class DiceWorld {
       );
       const spin = 18 + power * 26;
       die.body.setAngvel({ x: (rng() - 0.5) * spin, y: (rng() - 0.5) * spin, z: (rng() - 0.5) * spin }, true);
+    });
+    this.quietSteps = 0;
+    this.stepCount = 0;
+  }
+
+  /** Pick both dice up: they stop simulating and follow the hand until released. */
+  grab(): void {
+    for (const { body } of this.dice) body.setBodyType(this.R.RigidBodyType.KinematicPositionBased, true);
+  }
+
+  /**
+   * Hold both dice in the hand at a point over the tray (clamped inside the walls), side by
+   * side and turning slowly, so they look carried rather than frozen.
+   */
+  hold(x: number, z: number, t: number): void {
+    const limit = ARENA.apothem - 0.9;
+    const r = Math.hypot(x, z);
+    const k = r > limit ? limit / r : 1;
+    this.dice.forEach(({ body }, i) => {
+      const side = i === 0 ? -1 : 1;
+      body.setTranslation({ x: x * k + side * 0.45, y: 2.1 + Math.sin(t * 3 + i) * 0.08, z: z * k }, true);
+      body.setRotation(eulerToQuat(0.4 * Math.sin(t * 2 + i), t * 0.8 * side, 0.3 * Math.cos(t * 1.7 + i)), true);
+    });
+  }
+
+  /**
+   * Let go: the dice fly with the hand's velocity (clamped to a sane throw), a little seeded
+   * jitter so nobody can aim for a Howl, and spin that grows with speed.
+   */
+  release(velocity: { x: number; z: number }, seed: number): void {
+    const rng = createRng(seed);
+    const speed = Math.min(26, Math.hypot(velocity.x, velocity.z));
+    const heading = Math.atan2(velocity.z, velocity.x);
+    this.dice.forEach(({ body }, i) => {
+      body.setBodyType(this.R.RigidBodyType.Dynamic, true);
+      const spread = (i === 0 ? -1 : 1) * (0.05 + rng() * 0.12);
+      const v = speed * (0.9 + rng() * 0.2);
+      body.setLinvel({ x: v * Math.cos(heading + spread), y: 4 + rng() * 4 + speed * 0.12, z: v * Math.sin(heading + spread) }, true);
+      const spin = 10 + speed * 1.6;
+      body.setAngvel({ x: (rng() - 0.5) * spin, y: (rng() - 0.5) * spin, z: (rng() - 0.5) * spin }, true);
     });
     this.quietSteps = 0;
     this.stepCount = 0;
@@ -260,16 +319,39 @@ export class DiceWorld {
     return b.colliders.some((c) => this.dieTouchesCollider(a, c));
   }
 
+  /** Share of each die's weight the other die holds up, from the last step's contact impulses. */
+  private supportShares(): [number, number] {
+    const [a, b] = this.dice;
+    const weightImpulse = (die: DieBody) => die.body.mass() * -GRAVITY * TIMESTEP;
+    let upOnA = 0;
+    for (const ca of a.colliders) {
+      for (const cb of b.colliders) {
+        this.world.contactPair(ca, cb, (manifold, flipped) => {
+          // The manifold normal points from the first collider to the second.
+          const ny = manifold.normal().y * (flipped ? -1 : 1);
+          let impulse = 0;
+          for (let i = 0; i < manifold.numContacts(); i++) impulse += manifold.contactImpulse(i);
+          // Pushing B up means pushing A down, and the other way round.
+          upOnA += -ny * impulse;
+        });
+      }
+    }
+    return [Math.max(0, upOnA) / weightImpulse(a), Math.max(0, -upOnA) / weightImpulse(b)];
+  }
+
   /** Read the current poses and contacts. */
   read(): SettledDice {
     const [a, b] = this.dice;
     const touching = this.diceTouch();
     const aOnFloor = this.dieTouchesCollider(a, this.floor);
     const bOnFloor = this.dieTouchesCollider(b, this.floor);
+    const support = touching ? Math.max(...this.supportShares()) : 0;
     return {
       poses: [classifyPose(a.body.rotation()), classifyPose(b.body.rotation())],
       touching,
-      stacked: touching && (!aOnFloor || !bOnFloor),
+      // Off the felt entirely, or carried in good part by its packmate: the Alpha.
+      stacked: touching && (!aOnFloor || !bOnFloor || support >= ALPHA_SUPPORT),
+      support,
       settled: this.isAtRest(),
       steps: this.stepCount,
     };

@@ -9,7 +9,7 @@ import { constants, setPriority } from 'node:os';
 import { getAnimal } from '../src/animals/registry';
 import { PIG_TUNE, pigHitbox, type PigTune } from '../src/animals/pig-hitbox';
 import { localUp } from '../src/physics/classify';
-import { DiceWorld, loadRapier } from '../src/physics/dice-world';
+import { DiceWorld, autoRollInput, loadRapier } from '../src/physics/dice-world';
 import { createRng } from '../src/physics/rng';
 import { GENERIC_POSES, type GenericPose } from '../src/rules/poses';
 import { scoreRoll, type RollKind } from '../src/rules/scoring';
@@ -24,7 +24,7 @@ try {
 const tuneArg = process.argv.find((a) => a.startsWith('--tune='));
 /** --dump=file writes every throw's resting up-vectors and contacts, for re-classifying offline. */
 const dumpArg = process.argv.find((a) => a.startsWith('--dump='));
-const dump: { up: number[][]; touching: boolean; stacked: boolean }[] = [];
+const dump: { up: number[][]; y: number[]; touching: boolean; stacked: boolean; support: number }[] = [];
 const tune = tuneArg ? (JSON.parse(tuneArg.slice('--tune='.length)) as Record<string, number>) : null;
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const asJson = process.argv.includes('--json');
@@ -51,13 +51,15 @@ const started = Date.now();
 for (let i = 0; i < throws; i++) {
   // A fresh world per throw keeps each throw independent and deterministic.
   const world = new DiceWorld(R, [animalA, animalB]);
-  world.throwDice({ angle: (rng() - 0.5) * 0.8, power: 0.3 + rng() * 0.7, seed: Math.floor(rng() * 2 ** 32) });
+  world.throwDice({ ...autoRollInput(rng), seed: Math.floor(rng() * 2 ** 32) });
   const settled = world.settle();
   if (dumpArg) {
     dump.push({
       up: world.dice.map((d) => localUp(d.body.rotation()).map((v) => Number(v.toFixed(4)))),
+      y: world.dice.map((d) => Number(d.body.translation().y.toFixed(4))),
       touching: settled.touching,
       stacked: settled.stacked,
+      support: Number(settled.support.toFixed(3)),
     });
   }
   world.free();

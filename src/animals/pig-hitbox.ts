@@ -40,12 +40,12 @@ export interface PigTune {
 
 /** Tuned against the target table; see docs/calibration.md for the runs behind these numbers. */
 export const PIG_TUNE: PigTune = {
-  body: [0.5, 0.26, 0.29],
+  body: [0.5, 0.26, 0.28],
   bodyY: 0.38,
   bodyX: 0.07,
-  legR: 0.07,
-  legAt: [0.255, 0.17],
-  hindX: 0.33,
+  legR: 0.06,
+  legAt: [0.255, 0.16],
+  hindX: 0.345,
   tailR: 0,
   snoutR: 0.11,
   snoutLength: 0.14,
@@ -53,7 +53,7 @@ export const PIG_TUNE: PigTune = {
   earUp: 0.12,
   seat: 0,
   bodyShift: 0,
-  legWeight: 1.15,
+  legWeight: 1,
   headWeight: 1.5,
 };
 

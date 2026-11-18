@@ -9,7 +9,7 @@ import { setPriority, constants } from 'node:os';
 import { getAnimal } from '../src/animals/registry';
 import { PIG_TUNE, pigHitbox, type PigTune } from '../src/animals/pig-hitbox';
 import { classifyPose, localUp } from '../src/physics/classify';
-import { DiceWorld, loadRapier } from '../src/physics/dice-world';
+import { DiceWorld, autoRollInput, loadRapier } from '../src/physics/dice-world';
 import { createRng } from '../src/physics/rng';
 
 try {
@@ -29,7 +29,7 @@ const rng = createRng(777);
 const clusters = new Map<string, { n: number; pose: string; sum: [number, number, number] }>();
 for (let i = 0; i < throws; i++) {
   const world = new DiceWorld(R, [animal, animal]);
-  world.throwDice({ angle: (rng() - 0.5) * 0.8, power: 0.3 + rng() * 0.7, seed: Math.floor(rng() * 2 ** 32) });
+  world.throwDice({ ...autoRollInput(rng), seed: Math.floor(rng() * 2 ** 32) });
   world.settle();
   for (const die of world.dice) {
     const q = die.body.rotation();

@@ -54,7 +54,8 @@ test.describe('Feature: setting up a table', () => {
 
 test.describe('Feature: rolling and banking', () => {
   const rolls = [
-    { force: 'tailDown/sideMarkUp', label: 'Howl', points: 20 },
+    { force: 'tailDown/sideMarkUp', label: 'Howl', points: 25 },
+    { force: 'lean/sideMarkDown', label: 'Pounce', points: 15 },
     { force: 'noseDown/noseDown', label: 'Double Sniff', points: 40 },
     { force: 'back/upright', label: 'Play Dead + Prowl', points: 10 },
     { force: 'sideMarkUp/sideMarkUp', label: 'Den', points: 1 },
@@ -89,19 +90,19 @@ test.describe('Feature: busting', () => {
     await expect(page.getByRole('heading', { name: "Ash's turn" }), 'Then Ash is up next').toBeVisible();
   });
 
-  test('Scenario: Given Kat has 20 banked, When the wolves end Tangled, Then her bank is wiped to 0', async ({ page }) => {
+  test('Scenario: Given Kat has 25 banked, When the wolves end Tangled, Then her bank is wiped to 0', async ({ page }) => {
     await open(page, ['tailDown/sideMarkUp', 'sideMarkUp/sideMarkUp', 'tangled']);
     await startTable(page, ['Kat', 'Ash']);
     await takeWolves(page, 'Kat');
     await page.getByRole('button', { name: 'Roll' }).click();
-    await page.getByRole('button', { name: 'Bank 20' }).click();
+    await page.getByRole('button', { name: 'Bank 25' }).click();
     await takeWolves(page, 'Ash');
     await page.getByRole('button', { name: 'Roll' }).click();
     await page.getByRole('button', { name: 'Bank 1' }).click();
     await takeWolves(page, 'Kat');
     await page.getByRole('button', { name: 'Roll' }).click();
-    await expect(page.locator('.handover__summary'), 'Then the band reports the tangle').toHaveText('Tangled! Kat loses 20 and drops to 0.');
-    await expect(page.getByRole('img', { name: /Kat 0, Ash 1/ }), 'Then the pegboard shows Kat back at 0').toBeVisible();
+    await expect(page.locator('.handover__summary'), 'Then the band reports the tangle').toHaveText('Tangled! Kat loses 25 and drops to 0.');
+    await expect(page.getByRole('img', { name: /Kat 0, Ash 1/ }), 'Then the trail shows Kat back at 0').toBeVisible();
   });
 });
 
@@ -111,9 +112,9 @@ test.describe('Feature: winning', () => {
     await startTable(page, ['Kat', 'Ash'], 'First to 50');
     await takeWolves(page, 'Kat');
     await page.getByRole('button', { name: 'Roll' }).click();
-    await page.getByRole('button', { name: 'Bank 80' }).click();
+    await page.getByRole('button', { name: 'Bank 100' }).click();
     await expect(page.getByRole('heading', { name: 'Kat wins!' }), 'Then Kat is declared the winner').toBeVisible();
-    await expect(page.locator('.handover .card__total.is-winner'), 'Then the final score card marks 80').toHaveText('80');
+    await expect(page.locator('.handover .card__total.is-winner'), 'Then the final score card marks 100').toHaveText('100');
   });
 
   test('Scenario: Given solo play against the computer, When the computer banks past the target, Then the computer wins', async ({ page }) => {

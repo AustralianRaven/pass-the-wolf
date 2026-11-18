@@ -6,6 +6,8 @@ import { DEFAULT_DIE, PICKABLE } from '../animals/registry';
 import { ALPHA_POINTS, DEN_POINTS, DOUBLE_MULTIPLIER, MAX_SEATS, MIN_SEATS } from '../rules/constants';
 import { SCORING_POSES } from '../rules/poses';
 import type { DebugSettings } from '../game/debug';
+import { renderPortrait, type PortraitScene } from '../render/portrait';
+import { playCutscene } from './cutscene';
 
 /** Tiny element helper: text always goes through textContent, so names can't inject markup. */
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -500,6 +502,12 @@ export class GameView {
         const card = el('li', { class: `wolfcard${w.available ? '' : ' is-locked'}`, attrs: { 'aria-roledescription': 'slide', 'aria-label': `${i + 1} of ${WOLF_CHOICES.length}: ${w.name}` } });
         card.style.setProperty('--seat', seat.colour);
         const art = el('div', { class: 'wolfcard__art', attrs: { 'aria-hidden': 'true' } }, [this.wolfMark(w.available ? seat.colour : 'transparent')]);
+        if (w.available) {
+          const animal = PICKABLE.find((a) => a.scoring.id === DEFAULT_DIE) ?? PICKABLE[0]!;
+          void renderPortrait(animal, seat.colour, { kind: 'single', pose: 'upright' }).then((url) => {
+            art.replaceChildren(el('img', { class: 'wolfcard__render', attrs: { src: url, alt: '' } }));
+          });
+        }
         const pick = el('button', { class: 'tab tab--roll wolfcard__pick', text: w.available ? 'Choose' : 'Locked', attrs: { type: 'button' } });
         pick.disabled = !w.available;
         pick.addEventListener('click', () => {
@@ -676,6 +684,13 @@ export class GameView {
     this.board.replaceChildren(...nodes);
   }
 
+  // ---------- Cutscene ----------
+
+  /** The big-roll cutscene (see src/ui/cutscene.ts). */
+  playCutscene(roll: RollResult, ms: number): Promise<void> {
+    return playCutscene(this.root, roll, ms, (t) => this.announce(t));
+  }
+
   // ---------- Handover ----------
 
   showHandover(
@@ -735,21 +750,31 @@ export class GameView {
   private poseTiles(): HTMLElement {
     const scoring = PICKABLE.find((a) => a.scoring.id === DEFAULT_DIE)?.scoring ?? PICKABLE[0]!.scoring;
     const tiles = el('ul', { class: 'tiles' });
-    const tile = (name: string, single: string, double: string | null, tone = '') =>
-      el('li', { class: `tile${tone ? ` tile--${tone}` : ''}` }, [
+    // Every tile carries a real render of the wolf in that pose, in the current seat's collar.
+    const animal = PICKABLE.find((a) => a.scoring.id === DEFAULT_DIE) ?? PICKABLE[0]!;
+    const collar = this.lastState ? this.colourOf(this.lastState.currentSeat) : SEAT_COLOURS[0];
+    const tile = (name: string, single: string, double: string | null, shot: PortraitScene, tone = '') => {
+      const img = el('img', { class: 'tile__art', attrs: { alt: `${name}: how the wolves land`, width: '360', height: '220' } });
+      void renderPortrait(animal, collar, shot).then((url) => {
+        img.src = url;
+        img.classList.add('is-ready');
+      });
+      return el('li', { class: `tile${tone ? ` tile--${tone}` : ''}` }, [
+        el('div', { class: 'tile__frame' }, [img]),
         el('h4', { class: 'tile__name', text: name }),
         el('p', { class: 'tile__pts', text: single }),
         double ? el('p', { class: 'tile__double', text: double }) : null,
       ]);
-    tiles.append(tile('Den', `${DEN_POINTS} pt`, 'Both on the same side'));
+    };
+    tiles.append(tile('Den', `${DEN_POINTS} pt`, 'Both on the same side', { kind: 'pair', poses: ['sideMarkUp', 'sideMarkUp'] }));
     for (const pose of SCORING_POSES) {
       const p = scoring.points[pose];
-      tiles.append(tile(scoring.poseNames[pose], `${p} pts`, `Double ${p * 2 * DOUBLE_MULTIPLIER} pts`));
+      tiles.append(tile(scoring.poseNames[pose], `${p} pts`, `Double ${p * 2 * DOUBLE_MULTIPLIER} pts`, { kind: 'single', pose }));
     }
     tiles.append(
-      tile('Alpha', `+${ALPHA_POINTS} pts`, 'One wolf on top of the other', 'gold'),
-      tile('Scattered', 'Turn lost', 'Opposite sides', 'bust'),
-      tile('Tangled', 'Bank wiped', 'Wolves touching', 'bust'),
+      tile('Alpha', `+${ALPHA_POINTS} pts`, 'One wolf riding the other', { kind: 'alpha' }, 'gold'),
+      tile('Scattered', 'Turn lost', 'Opposite sides', { kind: 'pair', poses: ['sideMarkUp', 'sideMarkDown'] }, 'bust'),
+      tile('Tangled', 'Bank wiped', 'Wolves touching', { kind: 'touching' }, 'bust'),
     );
     return el('section', { class: 'sheet__section', attrs: { 'aria-labelledby': 'tiles-title' } }, [
       el('h3', { class: 'sheet__h', text: 'How the wolves score', attrs: { id: 'tiles-title' } }),

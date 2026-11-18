@@ -771,6 +771,12 @@ select {
   border-radius: 50%;
   box-shadow: inset 0 0 0 3px rgb(233 228 247 / 0.2);
 }
+.wolfcard__render {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
 .wolfcard__art .wolfmark {
   width: 7.5rem;
   height: 7.5rem;
@@ -800,6 +806,106 @@ select {
   text-align: center;
   color: var(--ink-dim);
   font-size: 0.9rem;
+}
+
+/* ---------- Big-roll cutscene ---------- */
+.hud,
+.demo,
+.demo__result,
+.gear {
+  transition: opacity 300ms var(--ease-out);
+}
+.is-cutscene .hud,
+.is-cutscene .demo,
+.is-cutscene .demo__result,
+.is-cutscene .gear {
+  opacity: 0;
+  pointer-events: none;
+}
+.cutscene {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  cursor: pointer;
+}
+.cutscene__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 13vh;
+  background: var(--gouge), var(--night);
+  animation: bar-in 520ms var(--ease-out) both;
+}
+.cutscene__bar--top {
+  top: 0;
+  border-bottom: 3px solid var(--ink);
+  transform-origin: top;
+}
+.cutscene__bar--bottom {
+  bottom: 0;
+  border-top: 3px solid var(--ink);
+  transform-origin: bottom;
+}
+@keyframes bar-in {
+  from {
+    transform: scaleY(0);
+  }
+}
+.cutscene__call {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(13vh + 2rem);
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  text-align: center;
+  animation: cut-in 700ms 260ms var(--ease-out) both;
+}
+@keyframes cut-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(1.04);
+    filter: blur(6px);
+  }
+}
+.cutscene__label {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(3.5rem, 9vw, 6rem);
+  line-height: 0.95;
+  text-shadow:
+    2px 2px 0 var(--block),
+    0 6px 30px rgb(10 6 22 / 0.8);
+}
+.cutscene__points {
+  margin: 0;
+  padding: 0.2rem 1.2rem;
+  border-block: 7px double var(--ink);
+  background: rgb(18 12 34 / 0.75);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.cutscene.is-bust .cutscene__points {
+  border-block-style: dashed;
+  border-block-width: 3px;
+}
+.cutscene__skip {
+  position: absolute;
+  bottom: 4vh;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+}
+.cutscene.is-out {
+  opacity: 0;
+  transition: opacity 240ms var(--ease-out);
 }
 
 /* ---------- Settings ---------- */
@@ -963,6 +1069,23 @@ select {
   border-top: 3px solid var(--ink);
   display: grid;
   gap: 0.1rem;
+}
+.tile__frame {
+  aspect-ratio: 36 / 22;
+  margin: 0 0 0.5rem;
+  background: var(--night);
+  overflow: hidden;
+}
+.tile__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+.tile__art.is-ready {
+  opacity: 1;
 }
 .tile__name {
   margin: 0;

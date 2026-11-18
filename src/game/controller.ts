@@ -1,6 +1,6 @@
 import type RAPIER_NS from '@dimforge/rapier3d-compat';
 import { getAnimal } from '../animals/registry';
-import { DiceWorld, MAX_STEPS, TIMESTEP, type SettledDice, type ThrowInput } from '../physics/dice-world';
+import { AUTO_ANGLE, DiceWorld, MAX_STEPS, TIMESTEP, autoRollInput, type SettledDice, type ThrowInput } from '../physics/dice-world';
 import { randomSeed } from '../physics/rng';
 import type { TableScene } from '../render/scene';
 import { applyRoll, bank, canBank, newGame, nextTurn, type GameState } from '../rules/game';
@@ -9,9 +9,13 @@ import type { GameView } from '../ui/view';
 import type { DebugFlags } from './debug';
 import { saveSetup, toSeats, type Setup } from './settings';
 
-type Phase = 'setup' | 'ready' | 'tumbling' | 'result' | 'handover' | 'over';
+type Phase = 'setup' | 'ready' | 'holding' | 'tumbling' | 'cutscene' | 'result' | 'handover' | 'over';
 
-const DEFAULT_ANGLE = -Math.PI / 2; // straight away from the player's edge
+/** Rolls worth this much or more get the zoom-in cutscene (as do Alpha and Tangled). */
+export const CUTSCENE_POINTS = 15;
+const CUTSCENE_MS = 2600;
+
+const DEFAULT_ANGLE = AUTO_ANGLE;
 const MAX_AIM = (55 * Math.PI) / 180;
 const CPU_BANK_AT = 20; // placeholder until the CPU personalities land
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -30,6 +34,9 @@ export class GameController {
   private forced: SettledDice[];
   private dragStart: { x: number; y: number } | null = null;
   private chargeStart: number | null = null;
+  /** Recent hand positions on the table while the wolves are held, for the throw velocity. */
+  private handTrail: { t: number; x: number; z: number }[] = [];
+  private hand: { x: number; z: number } = { x: 0, z: 0 };
 
   constructor(
     private readonly R: typeof RAPIER_NS,
@@ -126,6 +133,49 @@ export class GameController {
     }
   }
 
+  /** Pick the wolves up from where they lie; they follow the pointer until released. */
+  private grabDice(clientX: number, clientY: number): void {
+    if (!this.world) return;
+    const at = this.scene.pick(clientX, clientY);
+    if (!at) return;
+    this.world.grab();
+    this.hand = { x: at.x, z: at.z };
+    this.handTrail = [{ t: performance.now(), x: at.x, z: at.z }];
+    this.world.hold(at.x, at.z, performance.now() / 1000);
+    this.scene.sync(this.world);
+    this.view.showResult(null);
+    this.phase = 'holding';
+    this.refresh();
+  }
+
+  private moveHand(clientX: number, clientY: number): void {
+    const at = this.scene.pick(clientX, clientY);
+    if (!at) return;
+    const now = performance.now();
+    this.hand = { x: at.x, z: at.z };
+    this.handTrail.push({ t: now, x: at.x, z: at.z });
+    this.handTrail = this.handTrail.filter((p) => now - p.t < 150);
+  }
+
+  /** Let go: the wolves fly with the hand's speed and direction over the last tenth of a second. */
+  private releaseDice(): void {
+    if (!this.world || this.phase !== 'holding') return;
+    const now = performance.now();
+    const recent = this.handTrail.filter((p) => now - p.t < 110);
+    const first = recent[0] ?? this.handTrail[0];
+    const last = recent.at(-1) ?? first;
+    const dt = first && last ? Math.max(0.016, (last.t - first.t) / 1000) : 1;
+    const velocity = first && last ? { x: (last.x - first.x) / dt, z: (last.z - first.z) / dt } : { x: 0, z: 0 };
+    const seed = this.debug.seed !== null ? this.debug.seed + this.throwCount : randomSeed();
+    this.throwCount++;
+    this.world.release(velocity, seed);
+    this.handTrail = [];
+    this.phase = 'tumbling';
+    this.accumulator = 0;
+    this.refresh();
+    if (this.debug.fast) this.onSettled(this.world.settle());
+  }
+
   private onSettled(physical: SettledDice): void {
     if (!this.state || !this.world) return;
     this.scene.sync(this.world);
@@ -141,6 +191,23 @@ export class GameController {
     });
     this.state = applyRoll(this.state, roll);
     this.view.showResult(roll, seat.name);
+    const big = (!roll.bust && roll.points >= CUTSCENE_POINTS) || roll.kind === 'alpha' || roll.kind === 'tangled';
+    if (big && !this.debug.fast) {
+      this.phase = 'cutscene';
+      this.refresh();
+      const still = reduceMotion();
+      this.scene.focusOn(this.scene.diceCentre(), still ? 1 : 900);
+      void this.view.playCutscene(roll, CUTSCENE_MS).then(() => {
+        this.scene.focusOn(null, still ? 1 : 700);
+        this.afterResult(roll);
+      });
+      return;
+    }
+    this.afterResult(roll);
+  }
+
+  /** Carry on once the result has been shown (and its cutscene, if any, has finished). */
+  private afterResult(roll: RollResult): void {
     if (roll.bust) {
       this.phase = 'result';
       this.refresh();
@@ -195,8 +262,8 @@ export class GameController {
 
   private cpuThrow(): void {
     if (this.humanTurn || this.phase === 'tumbling') return;
-    const angle = DEFAULT_ANGLE + (Math.random() - 0.5) * 0.7;
-    this.throwDice({ angle, power: 0.45 + Math.random() * 0.5 });
+    // Computer seats auto-roll, so they throw with the same calibrated odds as the button.
+    this.throwDice(autoRollInput(Math.random));
   }
 
   private cpuDecide(): void {
@@ -223,6 +290,10 @@ export class GameController {
       this.scene.sync(this.world);
       if (rested) this.onSettled(this.world.read());
     }
+    if (this.phase === 'holding' && this.world) {
+      this.world.hold(this.hand.x, this.hand.z, now / 1000);
+      this.scene.sync(this.world);
+    }
     this.updateCharge(now);
     this.scene.render();
     requestAnimationFrame(this.frame);
@@ -238,10 +309,16 @@ export class GameController {
     const canvas = this.scene.canvas;
     canvas.addEventListener('pointerdown', (e) => {
       if (!this.canThrowNow()) return;
-      this.dragStart = { x: e.clientX, y: e.clientY };
       canvas.setPointerCapture(e.pointerId);
+      // On a wolf: pick both up and throw them by hand. Elsewhere: drag to sling them.
+      if (this.scene.pickDie(e.clientX, e.clientY) !== null) {
+        this.grabDice(e.clientX, e.clientY);
+        return;
+      }
+      this.dragStart = { x: e.clientX, y: e.clientY };
     });
     canvas.addEventListener('pointermove', (e) => {
+      if (this.phase === 'holding') return this.moveHand(e.clientX, e.clientY);
       if (!this.dragStart) return;
       const aim = this.dragAim(e.clientX, e.clientY);
       const from = this.scene.pick(this.dragStart.x, this.dragStart.y);
@@ -250,6 +327,7 @@ export class GameController {
       this.scene.showAimFrom(from, aim.angle, len);
     });
     const release = (e: PointerEvent) => {
+      if (this.phase === 'holding') return this.releaseDice();
       if (!this.dragStart) return;
       const aim = this.dragAim(e.clientX, e.clientY);
       this.dragStart = null;
@@ -258,6 +336,7 @@ export class GameController {
     };
     canvas.addEventListener('pointerup', release);
     canvas.addEventListener('pointercancel', () => {
+      if (this.phase === 'holding') this.releaseDice();
       this.dragStart = null;
       this.scene.showAim(null);
     });
@@ -334,6 +413,7 @@ export class GameController {
     const awaiting = this.state.phase === 'awaitingRoll';
     let hint = '';
     if (this.phase === 'tumbling') hint = 'Tumbling…';
+    else if (this.phase === 'holding') hint = 'Flick and let go to throw.';
     else if (ready && awaiting && human) {
       hint = this.state.turnPot > 0 ? 'Roll again, or bank what you have.' : 'Grab the wolves and fling them, or press Auto-roll.';
     } else if (ready && !human) hint = `${this.seat?.name} is thinking…`;
@@ -345,10 +425,10 @@ export class GameController {
     });
   }
 
-  /** Roll button: a standard throw straight up the table with a little variety. */
+  /** Auto-roll button: the calibrated throw profile, so its odds match the target table. */
   rollButton(): void {
     if (!this.canThrowNow()) return;
-    this.throwDice({ angle: this.aimAngle + (Math.random() - 0.5) * 0.3, power: 0.55 + Math.random() * 0.3 });
+    this.throwDice(autoRollInput(Math.random));
   }
 
   private later(fn: () => void, ms: number): void {

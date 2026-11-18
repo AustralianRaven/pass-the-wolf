@@ -15,9 +15,9 @@ export interface DebugFlags {
 }
 
 function parseForced(entry: string): SettledDice | null {
-  const base = { settled: true, steps: 0 };
+  const base = { settled: true, steps: 0, support: 0 };
   if (entry === 'tangled') return { ...base, poses: ['sideMarkUp', 'sideMarkUp'], touching: true, stacked: false };
-  if (entry === 'alpha') return { ...base, poses: ['upright', 'back'], touching: true, stacked: true };
+  if (entry === 'alpha') return { ...base, poses: ['upright', 'back'], touching: true, stacked: true, support: 1 };
   const [a, b] = entry.split('/');
   const isPose = (p: string | undefined): p is GenericPose => GENERIC_POSES.includes(p as GenericPose);
   if (!isPose(a) || !isPose(b)) return null;

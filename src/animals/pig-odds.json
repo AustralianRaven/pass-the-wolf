@@ -1,0 +1,54 @@
+{
+  "measured": "2026-11-18",
+  "profile": "auto-roll",
+  "throws": 20000,
+  "tune": {
+    "body": [
+      0.5,
+      0.26,
+      0.28
+    ],
+    "bodyY": 0.38,
+    "bodyX": 0.07,
+    "legR": 0.06,
+    "legAt": [
+      0.255,
+      0.16
+    ],
+    "hindX": 0.345,
+    "tailR": 0,
+    "snoutR": 0.11,
+    "snoutLength": 0.14,
+    "earOut": 0.1,
+    "earUp": 0.12,
+    "seat": 0,
+    "bodyShift": 0,
+    "legWeight": 1,
+    "headWeight": 1.5
+  },
+  "boundaries": {
+    "NOSE_AXIS": 0.6,
+    "SIT_AXIS": 0.85,
+    "LEAN_NOSE": 0.61,
+    "LEAN_TILT": 0.5
+  },
+  "alphaSupport": 0.37,
+  "posePct": {
+    "sideMarkUp": 32.51,
+    "sideMarkDown": 33.627,
+    "back": 21.418,
+    "upright": 8.445,
+    "noseDown": 3.007,
+    "lean": 0.61,
+    "tailDown": 0.383
+  },
+  "resultPct": {
+    "score": 49.595,
+    "scattered": 21.675,
+    "den": 21.48,
+    "double": 5.57,
+    "tangled": 1.64,
+    "alpha": 0.04
+  },
+  "avgPointsPerRoll": 4.71
+}

@@ -243,7 +243,59 @@ export class TableScene {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Which wolf (0 or 1) is under the pointer, if any. */
+  pickDie(clientX: number, clientY: number): number | null {
+    const rect = this.canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    this.raycaster.setFromCamera(ndc, this.camera);
+    const hits = this.raycaster.intersectObjects(this.dieMeshes, true);
+    for (const hit of hits) {
+      const i = this.dieMeshes.findIndex((m) => m === hit.object || m.getObjectById(hit.object.id));
+      if (i >= 0) return i;
+    }
+    return null;
+  }
+
+  /** Midpoint of the two wolves, for the cutscene camera. */
+  diceCentre(): THREE.Vector3 {
+    const c = new THREE.Vector3();
+    for (const m of this.dieMeshes) c.add(m.position);
+    return c.multiplyScalar(1 / Math.max(1, this.dieMeshes.length));
+  }
+
+  /** How far apart the two wolves lie on the felt. */
+  diceSpan(): number {
+    const [a, b] = this.dieMeshes;
+    return a && b ? Math.hypot(a.position.x - b.position.x, a.position.z - b.position.z) : 0;
+  }
+
+  private readonly homePosition = new THREE.Vector3(0, 12.5, 9.6);
+  private readonly homeTarget = new THREE.Vector3(0, 0, 0.9);
+  private readonly lookTarget = new THREE.Vector3(0, 0, 0.9);
+  private shot: { fromPos: THREE.Vector3; toPos: THREE.Vector3; fromLook: THREE.Vector3; toLook: THREE.Vector3; start: number; ms: number } | null = null;
+
+  /**
+   * Glide the camera to a low close-up on a point (the landed wolves), or back home with null.
+   * Exponential ease-out, so the move lands softly.
+   */
+  focusOn(target: THREE.Vector3 | null, ms = 900): void {
+    const toLook = target ? target.clone().setY(0.35) : this.homeTarget.clone();
+    // Pull back far enough to frame both wolves, however far apart they landed.
+    const reach = Math.max(4, this.diceSpan() * 1.25 + 2.4);
+    const dir = new THREE.Vector3(1.6, 2.6, 3.1).normalize();
+    const toPos = target ? target.clone().setY(0).addScaledVector(dir, reach) : this.homePosition.clone();
+    this.shot = { fromPos: this.camera.position.clone(), toPos, fromLook: this.lookTarget.clone(), toLook, start: performance.now(), ms: Math.max(1, ms) };
+  }
+
   render(): void {
+    if (this.shot) {
+      const t = Math.min(1, (performance.now() - this.shot.start) / this.shot.ms);
+      const e = 1 - Math.pow(1 - t, 4);
+      this.camera.position.lerpVectors(this.shot.fromPos, this.shot.toPos, e);
+      this.lookTarget.lerpVectors(this.shot.fromLook, this.shot.toLook, e);
+      this.camera.lookAt(this.lookTarget);
+      if (t >= 1) this.shot = null;
+    }
     this.renderer.render(this.scene, this.camera);
   }
 }
