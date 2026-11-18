@@ -15,7 +15,7 @@ export function feltTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#3d2c63';
+  g.fillStyle = '#3a3156';
   g.fillRect(0, 0, size, size);
   const rng = createRng(7);
   for (let i = 0; i < 14000; i++) {

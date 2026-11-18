@@ -1,4 +1,5 @@
-import '@fontsource/dela-gothic-one/latin-400.css';
+import '@fontsource-variable/grenze-gotisch/wght.css';
+import '@fontsource/grenze/900.css';
 import '@fontsource-variable/figtree/wght.css';
 import './ui/styles.css';
 import { GameController } from './game/controller';

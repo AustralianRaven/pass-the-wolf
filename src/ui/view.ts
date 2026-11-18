@@ -79,6 +79,12 @@ function setDigits(node: HTMLElement, value: number, places = 3): void {
 const WOLF_HEAD = 'M0 13 L-2.6 9.5 L-5 10.5 L-6.5 7 L-10 7.5 L-10.5 3.5 L-13 1.5 L-10.5 -1.5 L-9.5 -13 L-5 -6 L0 -7 L5 -6 L9.5 -13 L10.5 -1.5 L13 1.5 L10.5 3.5 L10 7.5 L6.5 7 L5 10.5 L2.6 9.5 Z';
 /** Eyes and muzzle cut out of the head, so the mark reads as a wolf and not a crown. */
 const WOLF_CUTS = 'M-6 -2 L-2.2 -0.4 L-5.6 0.6 Z M6 -2 L2.2 -0.4 L5.6 0.6 Z M-2 7.6 L2 7.6 L0 10.6 Z M-7.5 -9 L-6.8 -4.5 L-5.6 -6.2 Z M7.5 -9 L6.8 -4.5 L5.6 -6.2 Z M-1 1 L0 6 L1 1 Z';
+/** One paw print facing right: a heel pad and three toes, as path data. */
+function pawPrint(x: number, y: number): string {
+  const dot = (cx: number, cy: number, r: number) => `M${cx - r} ${cy} a${r} ${r} 0 1 0 ${r * 2} 0 a${r} ${r} 0 1 0 ${-r * 2} 0`;
+  return [dot(x, y, 2.1), dot(x + 3.2, y - 2.4, 0.95), dot(x + 3.9, y, 0.95), dot(x + 3.2, y + 2.4, 0.95)].join(' ');
+}
+
 /** A walking wolf in profile, facing the cave; feet on y = 0. */
 const WOLF_WALK = 'M-21 -9 L-17 -12 L-12 -12 L-6 -13 L4 -13 L8 -16 L10 -22 L12 -18 L14 -21 L15 -16 L20 -14 L22 -11 L16 -10 L12 -8 L11 -3 L12 0 L9 0 L8 -5 L4 -7 L-3 -7 L-6 -3 L-5 0 L-8 0 L-9 -4 L-11 -7 L-12 -2 L-11 0 L-14 0 L-15 -6 L-16 -9 Z';
 
@@ -512,13 +518,13 @@ export class GameView {
     const trackW = 860;
     const hillW = 150;
     const top = 34;
-    const laneH = 32;
+    const laneH = 40;
     const width = labelW + trackW + hillW;
     const height = top + seats * laneH + 10;
     this.board.setAttribute('viewBox', `0 0 ${width} ${height}`);
     this.board.setAttribute('aria-label', `Race to ${target}: ` + state.seats.map((s, i) => `${s.name} ${state.scores[i]}`).join(', '));
     const xAt = (n: number) => labelW + 18 + (Math.min(n, target) / target) * (trackW - 18);
-    const laneY = (i: number) => top + i * laneH + laneH - 6;
+    const laneY = (i: number) => top + i * laneH + laneH - 16;
 
     const banks: number[][] = state.seats.map(() => []);
     for (const row of buildScoreCard(state)) {
@@ -546,15 +552,21 @@ export class GameView {
     for (let x = labelW; x <= labelW + trackW; x += 20) snow.push(`${snow.length ? 'L' : 'M'}${x} ${(top - 4 + Math.sin(x / 37) * 1.6).toFixed(1)}`);
     nodes.push(svg('path', { class: 'frieze__snow', d: snow.join(' ') }));
 
-    // The hill, with the cave mouth cut into its foot where every route ends.
+    // A rocky hillside rising to the right, snow on its shoulder, the cave mouth cut into its foot.
     const hx = labelW + trackW - 6;
-    nodes.push(svg('path', { class: 'frieze__hill', d: `M${hx - 30} ${height} Q${hx + 10} ${top - 30} ${hx + 70} 2 Q${hx + 120} ${top - 26} ${width} ${top - 8} L${width} ${height} Z` }));
-    nodes.push(svg('path', { class: 'frieze__gouge', d: `M${hx + 40} ${top - 6} q18 -6 34 -2 M${hx + 70} ${top + 6} q22 -5 46 0 M${hx + 96} ${top - 14} q14 -3 30 1` }));
-    const mouthTop = top + 2;
+    nodes.push(
+      svg('path', {
+        class: 'frieze__hill',
+        d: `M${hx - 40} ${height} L${hx - 22} ${top + 10} L${hx - 4} ${top - 2} L${hx + 14} ${top - 14} L${hx + 34} ${top - 10} L${hx + 52} ${top - 26} L${hx + 74} ${top - 22} L${hx + 98} ${top - 32} L${hx + 120} ${top - 20} L${width} ${top - 26} L${width} ${height} Z`,
+      }),
+      svg('path', { class: 'frieze__snowcap', d: `M${hx - 4} ${top - 2} L${hx + 14} ${top - 14} L${hx + 34} ${top - 10} L${hx + 52} ${top - 26} L${hx + 74} ${top - 22} L${hx + 98} ${top - 32} L${hx + 120} ${top - 20} L${width} ${top - 26}` }),
+      svg('path', { class: 'frieze__gouge', d: `M${hx + 6} ${top + 6} l14 -4 M${hx + 104} ${top - 6} l22 -3 M${hx + 118} ${top + 14} l18 2 M${hx + 2} ${top + 40} l10 -2` }),
+    );
+    const m = top + 8;
     nodes.push(
       svg('path', {
         class: 'frieze__mouth',
-        d: `M${hx + 14} ${height} L${hx + 14} ${mouthTop + 24} Q${hx + 14} ${mouthTop} ${hx + 50} ${mouthTop} Q${hx + 86} ${mouthTop} ${hx + 86} ${mouthTop + 24} L${hx + 86} ${height} Z`,
+        d: `M${hx + 16} ${height} L${hx + 18} ${m + 34} L${hx + 24} ${m + 14} L${hx + 38} ${m + 2} L${hx + 54} ${m} L${hx + 70} ${m + 8} L${hx + 82} ${m + 26} L${hx + 88} ${height} Z`,
       }),
     );
 
@@ -563,20 +575,17 @@ export class GameView {
       const active = i === state.currentSeat && state.phase !== 'gameOver';
       const colour = this.colourOf(i);
       // Paw prints, alternating either side of the route, one every five points; tens cut larger.
-      for (let n = 0; n < target; n += 5) {
-        const x = xAt(n) + 6;
-        const off = (n / 5) % 2 === 0 ? -2.5 : 2.5;
-        const tens = n % 10 === 0 && n > 0;
-        nodes.push(svg('ellipse', { cx: x, cy: y - 3 + off, rx: tens ? 3.2 : 2.4, ry: tens ? 2.2 : 1.7, class: `frieze__paw${active ? ' is-active' : ''}` }));
-      }
+      const paws: string[] = [];
+      for (let n = 0; n < target; n += 5) paws.push(pawPrint(xAt(n) + 8, y - 3 + ((n / 5) % 2 === 0 ? -3 : 3)));
+      nodes.push(svg('path', { d: paws.join(' '), class: `frieze__paw${active ? ' is-active' : ''}` }));
       if (active) {
         nodes.push(
-          svg('line', { x1: xAt(0), x2: hx + 14, y1: y + 3, y2: y + 3, class: 'frieze__rule' }),
-          svg('line', { x1: xAt(0), x2: hx + 14, y1: y + 6.5, y2: y + 6.5, class: 'frieze__rule' }),
+          svg('line', { x1: xAt(0), x2: hx + 16, y1: y + 14, y2: y + 14, class: 'frieze__rule' }),
+          svg('line', { x1: xAt(0), x2: hx + 16, y1: y + 17.5, y2: y + 17.5, class: 'frieze__rule' }),
         );
       }
       for (const b of banks[i]!) {
-        nodes.push(svg('rect', { x: xAt(b) - 2.5, y: y - 13, width: 5, height: 16, class: 'frieze__course', fill: colour }));
+        nodes.push(svg('rect', { x: xAt(b) - 3, y: y + 2, width: 6, height: 10, class: 'frieze__course', fill: colour }));
       }
       const label = svg('text', { x: 12, y, class: `trail__name${active ? ' is-active' : ''}` });
       label.textContent = seat.name;

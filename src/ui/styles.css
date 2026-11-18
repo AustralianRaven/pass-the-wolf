@@ -5,13 +5,15 @@
   --paper-2: #2f2152;
   --block: #7a5cc4;
   --block-deep: #4e3a86;
+  --block-hover: #8a6dd6;
   --ink: #e9e4f7;
   --ink-dim: #bdb2db;
   --ink-faint: #8d80b3;
   --frost: #a9c4e8;
   --active: #a58bd6;
   --handover: #a58bd6;
-  --font-display: 'Dela Gothic One', 'Arial Black', sans-serif;
+  --font-display: 'Grenze', 'Georgia', serif;
+  --font-mark: 'Grenze Gotisch Variable', 'Georgia', serif;
   --font-body: 'Figtree Variable', system-ui, sans-serif;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --cut: 2px;
@@ -112,7 +114,7 @@ select {
   background: var(--gouge), var(--tab-bg);
   color: var(--ink);
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 1.35rem;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -146,7 +148,7 @@ select {
   padding-inline: 1.8rem;
 }
 .tab--roll:hover:not(:disabled) {
-  --tab-bg: #8a6dd6;
+  --tab-bg: var(--block-hover);
 }
 .tab--roll:disabled {
   --tab-bg: var(--paper-2);
@@ -187,7 +189,7 @@ select {
 .plate__name {
   margin: 0.2rem 0 0;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 2.4rem;
   line-height: 1;
   letter-spacing: 0.01em;
@@ -280,7 +282,7 @@ select {
   border-block: 3px solid var(--ink);
   opacity: 0;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   line-height: 1;
 }
 .result.is-shown {
@@ -360,6 +362,13 @@ select {
   stroke-width: 2.2;
   stroke-linecap: round;
   opacity: 0.45;
+}
+.frieze__snowcap {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 .frieze__mouth {
   fill: var(--night);
@@ -443,8 +452,8 @@ select {
   display: flex;
   align-items: baseline;
   gap: 0.6rem;
-  font-family: var(--font-display);
-  font-weight: 400;
+  font-family: var(--font-mark);
+  font-weight: 900;
   line-height: 0.85;
 }
 .wordmark__small {
@@ -486,7 +495,7 @@ select {
 }
 .mode__label {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 1.5rem;
   line-height: 1;
 }
@@ -505,7 +514,7 @@ select {
 .setup__h {
   margin: 0 0 0.6rem;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 1.7rem;
   line-height: 1;
 }
@@ -614,7 +623,7 @@ select {
 }
 .seat__kind:hover:not(:disabled),
 .seat__remove:hover:not(:disabled) {
-  color: var(--ink);
+  background: var(--block-deep);
   border-bottom-color: var(--ink);
 }
 .seat__kind:disabled,
@@ -689,7 +698,7 @@ select {
 .sheet__head h2 {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 2rem;
   line-height: 1;
 }
@@ -778,7 +787,7 @@ select {
 .wolfcard__name {
   margin: 0.4rem 0 0;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 2rem;
   line-height: 1;
 }
@@ -805,7 +814,7 @@ select {
 .sheet__h {
   margin: 0 0 0.7rem;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 1.6rem;
   line-height: 1;
 }
@@ -891,14 +900,14 @@ select {
 .tile__name {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 1.45rem;
   line-height: 1.05;
 }
 .tile__pts {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: 1.15rem;
   color: var(--ink);
 }
@@ -958,7 +967,7 @@ select {
 .handover__name {
   margin: 0;
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 900;
   font-size: clamp(3rem, 7vw, 5.6rem);
   line-height: 0.95;
   text-wrap: balance;

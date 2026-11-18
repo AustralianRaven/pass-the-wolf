@@ -59,7 +59,7 @@ export class TableScene {
 
   private buildLights(): void {
     this.scene.add(new THREE.HemisphereLight('#cdbff5', '#1a1030', 0.6));
-    const lamp = new THREE.DirectionalLight('#eadcff', 2.2);
+    const lamp = new THREE.DirectionalLight('#ebe6f5', 2.2);
     lamp.position.set(-6, 18, 6);
     lamp.castShadow = true;
     lamp.shadow.mapSize.set(2048, 2048);

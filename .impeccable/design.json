@@ -1,0 +1,504 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-18T05:37:48.416Z",
+  "title": "Design System: Pass the Wolf",
+  "extensions": {
+    "colorMeta": {
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "#120c22",
+        "oklch": "oklch(17.6% 0.044 293.9)",
+        "tonalRamp": [
+          "#0c0914",
+          "#252133",
+          "#413c54",
+          "#5f5975",
+          "#7e7995",
+          "#9f9ab4",
+          "#c5c1d4",
+          "#eeedf4"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Night-Violet Paper",
+        "canonical": "#1e1533",
+        "oklch": "oklch(22.4% 0.057 295.2)",
+        "tonalRamp": [
+          "#0c0816",
+          "#261f37",
+          "#423a59",
+          "#60577b",
+          "#7f779b",
+          "#a099ba",
+          "#c5c0d8",
+          "#efedf5"
+        ]
+      },
+      "paper-2": {
+        "role": "neutral",
+        "displayName": "Second Pull Paper",
+        "canonical": "#2f2152",
+        "oklch": "oklch(29.3% 0.086 293.6)",
+        "tonalRamp": [
+          "#0c071c",
+          "#261c41",
+          "#423666",
+          "#605489",
+          "#7f74aa",
+          "#a096c8",
+          "#c5bee3",
+          "#efedf9"
+        ]
+      },
+      "block": {
+        "role": "primary",
+        "displayName": "Second Block Violet",
+        "canonical": "#7a5cc4",
+        "oklch": "oklch(55.5% 0.156 294.0)",
+        "tonalRamp": [
+          "#0f0128",
+          "#2a0e57",
+          "#472783",
+          "#6545ab",
+          "#8468cd",
+          "#a38de8",
+          "#c7b9fb",
+          "#efebff"
+        ]
+      },
+      "block-deep": {
+        "role": "primary",
+        "displayName": "Deep Block Violet",
+        "canonical": "#4e3a86",
+        "oklch": "oklch(41.1% 0.122 292.3)",
+        "tonalRamp": [
+          "#0d0422",
+          "#27174c",
+          "#433076",
+          "#614e9c",
+          "#806fbd",
+          "#a092d9",
+          "#c5bcf0",
+          "#eeecfd"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Pale Ink",
+        "canonical": "#e9e4f7",
+        "oklch": "oklch(92.8% 0.026 297.9)",
+        "tonalRamp": [
+          "#0c0a10",
+          "#25222d",
+          "#413d4b",
+          "#5f5b6b",
+          "#7f7a8b",
+          "#a09cab",
+          "#c5c2cd",
+          "#efeef1"
+        ]
+      },
+      "ink-dim": {
+        "role": "neutral",
+        "displayName": "Dim Ink",
+        "canonical": "#bdb2db",
+        "oklch": "oklch(78.6% 0.059 297.3)",
+        "tonalRamp": [
+          "#0d0816",
+          "#261f37",
+          "#433959",
+          "#61577b",
+          "#81769b",
+          "#a198ba",
+          "#c6c0d8",
+          "#efedf5"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Faint Ink",
+        "canonical": "#8d80b3",
+        "oklch": "oklch(63.1% 0.077 295.8)",
+        "tonalRamp": [
+          "#0d071a",
+          "#271d3d",
+          "#433761",
+          "#615484",
+          "#8174a5",
+          "#a197c3",
+          "#c6bfdf",
+          "#efedf7"
+        ]
+      },
+      "frost": {
+        "role": "neutral",
+        "displayName": "Frost",
+        "canonical": "#a9c4e8",
+        "oklch": "oklch(81.2% 0.059 255.7)",
+        "tonalRamp": [
+          "#040b18",
+          "#15253a",
+          "#2c415c",
+          "#475f7f",
+          "#677f9f",
+          "#8aa0bd",
+          "#b6c6db",
+          "#eaeff6"
+        ]
+      },
+      "collar-lilac": {
+        "role": "tertiary",
+        "displayName": "Lilac Collar",
+        "canonical": "#a58bd6",
+        "oklch": "oklch(68.9% 0.111 299.4)",
+        "tonalRamp": [
+          "#0f041f",
+          "#2b1747",
+          "#48306e",
+          "#674d93",
+          "#876eb4",
+          "#a791d0",
+          "#cabbe9",
+          "#f0ecfb"
+        ]
+      },
+      "collar-ember": {
+        "role": "tertiary",
+        "displayName": "Ember Collar",
+        "canonical": "#e07a3a",
+        "oklch": "oklch(68.3% 0.148 49.9)",
+        "tonalRamp": [
+          "#210000",
+          "#4b0400",
+          "#741d00",
+          "#9b3c00",
+          "#be5f1d",
+          "#dc8654",
+          "#f3b491",
+          "#ffeade"
+        ]
+      },
+      "collar-glacier": {
+        "role": "tertiary",
+        "displayName": "Glacier Collar",
+        "canonical": "#5b9bd5",
+        "oklch": "oklch(67.1% 0.109 247.5)",
+        "tonalRamp": [
+          "#000b21",
+          "#00254a",
+          "#004272",
+          "#1f6197",
+          "#4582b9",
+          "#6fa4d5",
+          "#a3c9ec",
+          "#e4f0fc"
+        ]
+      },
+      "collar-pine": {
+        "role": "tertiary",
+        "displayName": "Pine Collar",
+        "canonical": "#6fae6a",
+        "oklch": "oklch(69.1% 0.117 142.6)",
+        "tonalRamp": [
+          "#001100",
+          "#002e00",
+          "#134d10",
+          "#306e2d",
+          "#538e4e",
+          "#7aae76",
+          "#abd0a7",
+          "#e6f3e5"
+        ]
+      },
+      "collar-gold": {
+        "role": "tertiary",
+        "displayName": "Gold Collar",
+        "canonical": "#e3b341",
+        "oklch": "oklch(79.0% 0.139 85.2)",
+        "tonalRamp": [
+          "#180600",
+          "#3b1c00",
+          "#5e3600",
+          "#805400",
+          "#a17500",
+          "#bf983e",
+          "#dcc186",
+          "#f7eedb"
+        ]
+      },
+      "collar-snow": {
+        "role": "tertiary",
+        "displayName": "Snow Collar",
+        "canonical": "#efe7da",
+        "oklch": "oklch(93.1% 0.019 80.1)",
+        "tonalRamp": [
+          "#0d0b07",
+          "#28231c",
+          "#453f35",
+          "#635d52",
+          "#837c71",
+          "#a49e93",
+          "#c8c3bc",
+          "#f0eeec"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "The game title only, in Grenze Gotisch."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Next player name on the handover band."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Active seat name and the pinned result call."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Dialog and section heads, mode labels, wolf card and tile names."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Carved tabs; the primary roll tab steps up to 1.6rem."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Scores in digit blocks, trail scores and totals; tabular figures."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Ledes and blurbs, capped near 50ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Stat labels, captions, hints and seat controls; sentence case."
+      }
+    },
+    "shadows": [
+      {
+        "name": "block-lift",
+        "value": "0 18px 40px -12px rgb(6 3 16 / 0.7)",
+        "purpose": "Every carved block panel."
+      },
+      {
+        "name": "tab-lift",
+        "value": "0 8px 18px -8px rgb(6 3 16 / 0.8)",
+        "purpose": "Carved tabs at rest."
+      },
+      {
+        "name": "tab-pressed",
+        "value": "0 3px 8px -4px rgb(6 3 16 / 0.8)",
+        "purpose": "Carved tab while pressed."
+      },
+      {
+        "name": "trail-lift",
+        "value": "0 -16px 30px -18px rgb(6 3 16 / 0.9)",
+        "purpose": "Trail strip, cast upward."
+      },
+      {
+        "name": "band-lift",
+        "value": "0 24px 50px -16px rgb(6 3 16 / 0.9)",
+        "purpose": "Handover band."
+      },
+      {
+        "name": "cut-inset",
+        "value": "inset 0 0 0 1.5px rgb(233 228 247 / 0.25)",
+        "purpose": "Edge of a digit block."
+      },
+      {
+        "name": "moon-glow",
+        "value": "drop-shadow(0 0 40px rgb(169 196 232 / 0.25))",
+        "purpose": "Frost glow behind the carved moon only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The single easing for every UI transition."
+      },
+      {
+        "name": "tab-press",
+        "value": "160ms",
+        "purpose": "Tab lift, press and ink-in on hover."
+      },
+      {
+        "name": "print",
+        "value": "260ms",
+        "purpose": "Digit swap (drop 5px from a brightened pull) and den carousel focus."
+      },
+      {
+        "name": "ink",
+        "value": "420ms",
+        "purpose": "Result line re-inked: blur and slight scale settling."
+      },
+      {
+        "name": "trail-walk",
+        "value": "500ms",
+        "purpose": "Wolf advancing along its trail lane."
+      },
+      {
+        "name": "sweep",
+        "value": "520ms",
+        "purpose": "Handover band clipped in left to right."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "1ms",
+        "purpose": "All UI animation and transition collapses under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Roll Tab",
+      "kind": "button",
+      "refersTo": "tab-roll",
+      "description": "The one primary carved tab per view: Roll, Reroll, Deal the wolves, Choose.",
+      "html": "<button class=\"ds-tab-roll\">Reroll</button>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-tab-roll{background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='none' stroke='%23e9e4f7' stroke-linecap='round' stroke-opacity='.07'%3E%3Cpath stroke-width='3' d='M8 14q26 -3 52 1'/%3E%3Cpath stroke-width='2' d='M90 9q30 2 58 -1'/%3E%3Cpath stroke-width='4' d='M160 22q24 -2 50 2'/%3E%3Cpath stroke-width='2' d='M20 44q34 3 70 0'/%3E%3Cpath stroke-width='3' d='M118 52q28 -3 60 1'/%3E%3Cpath stroke-width='2' d='M4 78q22 2 46 -1'/%3E%3Cpath stroke-width='3' d='M70 86q36 -2 72 2'/%3E%3Cpath stroke-width='2' d='M168 92q20 2 44 -1'/%3E%3Cpath stroke-width='3' d='M30 110q30 -2 60 1'/%3E%3C/g%3E%3C/svg%3E\"),var(--tab-bg,var(--paper-2));color:var(--ink);font-family:Grenze,Georgia,serif;font-weight:900;font-size:1.35rem;letter-spacing:0.02em;line-height:1;padding:0.7rem 1.4rem 0.75rem;border:10px solid;border-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='none' stroke='%23e9e4f7' stroke-width='2.4' stroke-linejoin='round' d='M3 4.2 L20 3 L41 4 L57 2.8 L56.6 20 L57.4 41 L56.2 57 L39 56.4 L18 57.2 L3.4 56.6 L2.6 39 L3.6 19 Z'/%3E%3C/svg%3E\") 14 / 10px / 0 round;border-radius:0;box-shadow:0 8px 18px -8px rgb(6 3 16 / 0.8);cursor:pointer;transition:transform 160ms var(--ease-out),box-shadow 160ms var(--ease-out);--tab-bg:var(--block);font-size:1.6rem;padding-inline:1.8rem;} .ds-tab-roll:hover:not(:disabled){transform:translateY(-2px);--tab-bg:var(--block-hover,#8a6dd6);} .ds-tab-roll:active:not(:disabled){transform:translateY(1px);box-shadow:0 3px 8px -4px rgb(6 3 16 / 0.8);} .ds-tab-roll:focus-visible{outline:2px dashed var(--ink);outline-offset:4px;}"
+    },
+    {
+      "name": "Carved Tab",
+      "kind": "button",
+      "refersTo": "tab",
+      "description": "Default carved tab for secondary actions such as Bank.",
+      "html": "<button class=\"ds-tab\">Bank 5</button>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-tab{background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='none' stroke='%23e9e4f7' stroke-linecap='round' stroke-opacity='.07'%3E%3Cpath stroke-width='3' d='M8 14q26 -3 52 1'/%3E%3Cpath stroke-width='2' d='M90 9q30 2 58 -1'/%3E%3Cpath stroke-width='4' d='M160 22q24 -2 50 2'/%3E%3Cpath stroke-width='2' d='M20 44q34 3 70 0'/%3E%3Cpath stroke-width='3' d='M118 52q28 -3 60 1'/%3E%3Cpath stroke-width='2' d='M4 78q22 2 46 -1'/%3E%3Cpath stroke-width='3' d='M70 86q36 -2 72 2'/%3E%3Cpath stroke-width='2' d='M168 92q20 2 44 -1'/%3E%3Cpath stroke-width='3' d='M30 110q30 -2 60 1'/%3E%3C/g%3E%3C/svg%3E\"),var(--tab-bg,var(--paper-2));color:var(--ink);font-family:Grenze,Georgia,serif;font-weight:900;font-size:1.35rem;letter-spacing:0.02em;line-height:1;padding:0.7rem 1.4rem 0.75rem;border:10px solid;border-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='none' stroke='%23e9e4f7' stroke-width='2.4' stroke-linejoin='round' d='M3 4.2 L20 3 L41 4 L57 2.8 L56.6 20 L57.4 41 L56.2 57 L39 56.4 L18 57.2 L3.4 56.6 L2.6 39 L3.6 19 Z'/%3E%3C/svg%3E\") 14 / 10px / 0 round;border-radius:0;box-shadow:0 8px 18px -8px rgb(6 3 16 / 0.8);cursor:pointer;transition:transform 160ms var(--ease-out),box-shadow 160ms var(--ease-out);} .ds-tab:hover:not(:disabled){transform:translateY(-2px);--tab-bg:var(--block-deep);} .ds-tab:active:not(:disabled){transform:translateY(1px);box-shadow:0 3px 8px -4px rgb(6 3 16 / 0.8);} .ds-tab:focus-visible{outline:2px dashed var(--ink);outline-offset:4px;}"
+    },
+    {
+      "name": "Quiet Tab",
+      "kind": "button",
+      "refersTo": "tab-quiet",
+      "description": "Utility tab in the workhorse sans: Score sheet, New game, Close.",
+      "html": "<button class=\"ds-tab-quiet\">Score sheet</button>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-tab-quiet{background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='none' stroke='%23e9e4f7' stroke-linecap='round' stroke-opacity='.07'%3E%3Cpath stroke-width='3' d='M8 14q26 -3 52 1'/%3E%3Cpath stroke-width='2' d='M90 9q30 2 58 -1'/%3E%3Cpath stroke-width='4' d='M160 22q24 -2 50 2'/%3E%3Cpath stroke-width='2' d='M20 44q34 3 70 0'/%3E%3Cpath stroke-width='3' d='M118 52q28 -3 60 1'/%3E%3Cpath stroke-width='2' d='M4 78q22 2 46 -1'/%3E%3Cpath stroke-width='3' d='M70 86q36 -2 72 2'/%3E%3Cpath stroke-width='2' d='M168 92q20 2 44 -1'/%3E%3Cpath stroke-width='3' d='M30 110q30 -2 60 1'/%3E%3C/g%3E%3C/svg%3E\"),var(--tab-bg,var(--paper-2));color:var(--ink);font-family:Grenze,Georgia,serif;font-weight:900;font-size:1.35rem;letter-spacing:0.02em;line-height:1;padding:0.7rem 1.4rem 0.75rem;border:10px solid;border-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='none' stroke='%23e9e4f7' stroke-width='2.4' stroke-linejoin='round' d='M3 4.2 L20 3 L41 4 L57 2.8 L56.6 20 L57.4 41 L56.2 57 L39 56.4 L18 57.2 L3.4 56.6 L2.6 39 L3.6 19 Z'/%3E%3C/svg%3E\") 14 / 10px / 0 round;border-radius:0;box-shadow:0 8px 18px -8px rgb(6 3 16 / 0.8);cursor:pointer;transition:transform 160ms var(--ease-out),box-shadow 160ms var(--ease-out);font-family:'Figtree Variable',system-ui,sans-serif;font-weight:800;font-size:0.95rem;letter-spacing:0.01em;padding:0.45rem 0.9rem 0.5rem;border-width:8px;} .ds-tab-quiet:hover:not(:disabled){transform:translateY(-2px);--tab-bg:var(--block-deep);} .ds-tab-quiet:active:not(:disabled){transform:translateY(1px);box-shadow:0 3px 8px -4px rgb(6 3 16 / 0.8);} .ds-tab-quiet:focus-visible{outline:2px dashed var(--ink);outline-offset:4px;}"
+    },
+    {
+      "name": "Disabled Tab",
+      "kind": "button",
+      "refersTo": "tab-disabled",
+      "description": "Unavailable tab: faint ink, the frame redrawn dashed, no shadow.",
+      "html": "<button class=\"ds-tab-off\" disabled>Locked</button>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-tab-off{background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='none' stroke='%23e9e4f7' stroke-linecap='round' stroke-opacity='.07'%3E%3Cpath stroke-width='3' d='M8 14q26 -3 52 1'/%3E%3Cpath stroke-width='2' d='M90 9q30 2 58 -1'/%3E%3Cpath stroke-width='4' d='M160 22q24 -2 50 2'/%3E%3Cpath stroke-width='2' d='M20 44q34 3 70 0'/%3E%3Cpath stroke-width='3' d='M118 52q28 -3 60 1'/%3E%3Cpath stroke-width='2' d='M4 78q22 2 46 -1'/%3E%3Cpath stroke-width='3' d='M70 86q36 -2 72 2'/%3E%3Cpath stroke-width='2' d='M168 92q20 2 44 -1'/%3E%3Cpath stroke-width='3' d='M30 110q30 -2 60 1'/%3E%3C/g%3E%3C/svg%3E\"),var(--tab-bg,var(--paper-2));color:var(--ink);font-family:Grenze,Georgia,serif;font-weight:900;font-size:1.35rem;letter-spacing:0.02em;line-height:1;padding:0.7rem 1.4rem 0.75rem;border:10px solid;border-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='none' stroke='%23e9e4f7' stroke-width='2.4' stroke-linejoin='round' d='M3 4.2 L20 3 L41 4 L57 2.8 L56.6 20 L57.4 41 L56.2 57 L39 56.4 L18 57.2 L3.4 56.6 L2.6 39 L3.6 19 Z'/%3E%3C/svg%3E\") 14 / 10px / 0 round;border-radius:0;box-shadow:0 8px 18px -8px rgb(6 3 16 / 0.8);cursor:pointer;transition:transform 160ms var(--ease-out),box-shadow 160ms var(--ease-out);color:var(--ink-faint);border-image-source:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='none' stroke='%238d80b3' stroke-width='2.4' stroke-dasharray='6 5' d='M3 4.2 L20 3 L41 4 L57 2.8 L56.6 20 L57.4 41 L56.2 57 L39 56.4 L18 57.2 L3.4 56.6 L2.6 39 L3.6 19 Z'/%3E%3C/svg%3E\");box-shadow:none;cursor:not-allowed;}"
+    },
+    {
+      "name": "Seat Name Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Text field cut into the block: night field, faint underline that brightens on focus.",
+      "html": "<input class=\"ds-field\" value=\"Ember\" aria-label=\"Seat name\">",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-field{padding:0.45rem 0.6rem;background:var(--night);color:var(--ink);border:0;border-bottom:2px solid var(--ink-faint);border-radius:0;font-family:'Figtree Variable',system-ui,sans-serif;font-weight:700;font-size:16px;} .ds-field:focus-visible{border-bottom-color:var(--ink);outline:2px dashed var(--ink);outline-offset:2px;}"
+    },
+    {
+      "name": "Mode Choice",
+      "kind": "chip",
+      "refersTo": "mode-choice",
+      "description": "Radio choice between game modes; selection inks the field and cuts both rules.",
+      "html": "<label class=\"ds-mode\"><input type=\"radio\" name=\"m\" checked><span class=\"ds-mode-l\">Solo</span><span class=\"ds-mode-d\">You against the computer</span></label><label class=\"ds-mode\"><input type=\"radio\" name=\"m\"><span class=\"ds-mode-l\">Table</span><span class=\"ds-mode-d\">2 to 6 players, pass the mouse</span></label>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-mode{position:relative;display:inline-grid;gap:0.15rem;padding:0.7rem 0.9rem;margin-right:0.8rem;background:var(--paper-2);color:var(--ink);border-top:3px solid transparent;border-bottom:3px solid transparent;cursor:pointer;} .ds-mode input{position:absolute;opacity:0;} .ds-mode-l{font-family:Grenze,Georgia,serif;font-weight:900;font-size:1.5rem;line-height:1;} .ds-mode-d{color:var(--ink-dim);font-family:'Figtree Variable',system-ui,sans-serif;font-size:0.88rem;} .ds-mode:has(input:checked){border-color:var(--ink);background:var(--block-deep);} .ds-mode:has(input:focus-visible){outline:2px dashed var(--ink);outline-offset:4px;}"
+    },
+    {
+      "name": "Carved Block",
+      "kind": "card",
+      "refersTo": "block",
+      "description": "Every panel in the game: gouge texture over paper inside a hand-cut frame.",
+      "html": "<section class=\"ds-block\"><h2 class=\"ds-block-h\">Score sheet</h2><p class=\"ds-block-p\">Race to 100. Each cell shows that round&#39;s turn.</p></section>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-block{background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='none' stroke='%23e9e4f7' stroke-linecap='round' stroke-opacity='.07'%3E%3Cpath stroke-width='3' d='M8 14q26 -3 52 1'/%3E%3Cpath stroke-width='2' d='M90 9q30 2 58 -1'/%3E%3Cpath stroke-width='4' d='M160 22q24 -2 50 2'/%3E%3Cpath stroke-width='2' d='M20 44q34 3 70 0'/%3E%3Cpath stroke-width='3' d='M118 52q28 -3 60 1'/%3E%3Cpath stroke-width='2' d='M4 78q22 2 46 -1'/%3E%3Cpath stroke-width='3' d='M70 86q36 -2 72 2'/%3E%3Cpath stroke-width='2' d='M168 92q20 2 44 -1'/%3E%3Cpath stroke-width='3' d='M30 110q30 -2 60 1'/%3E%3C/g%3E%3C/svg%3E\"),var(--paper);color:var(--ink);padding:1rem 1.3rem 1.3rem;border:14px solid transparent;border-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath fill='none' stroke='%23e9e4f7' stroke-width='2.4' stroke-linejoin='round' d='M3 4.2 L20 3 L41 4 L57 2.8 L56.6 20 L57.4 41 L56.2 57 L39 56.4 L18 57.2 L3.4 56.6 L2.6 39 L3.6 19 Z'/%3E%3C/svg%3E\") 14 / 14px / 0 round;box-shadow:0 18px 40px -12px rgb(6 3 16 / 0.7);max-width:28rem;} .ds-block-h{margin:0 0 0.6rem;font-family:Grenze,Georgia,serif;font-weight:900;font-size:2rem;line-height:1;} .ds-block-p{margin:0;color:var(--ink-dim);font-family:'Figtree Variable',system-ui,sans-serif;font-size:0.88rem;}"
+    },
+    {
+      "name": "Digit Blocks",
+      "kind": "custom",
+      "refersTo": "digit",
+      "description": "Fixed digit places; each numeral a small cut block that swaps on change, never fades.",
+      "html": "<span class=\"ds-digits\"><span class=\"ds-digit\"></span><span class=\"ds-digit\">1</span><span class=\"ds-digit\">5</span></span> <span class=\"ds-digits ds-pot\"><span class=\"ds-digit\"></span><span class=\"ds-digit\"></span><span class=\"ds-digit\">5</span></span>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-digits{display:inline-flex;gap:3px;font-family:'Figtree Variable',system-ui,sans-serif;font-weight:800;font-size:1.7rem;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink);} .ds-digit{display:inline-grid;place-items:center;width:1.45rem;height:2.2rem;background:var(--night);box-shadow:inset 0 0 0 1.5px rgb(233 228 247 / 0.25);} .ds-pot .ds-digit{background:var(--block-deep);}"
+    },
+    {
+      "name": "Result Line",
+      "kind": "custom",
+      "refersTo": "result",
+      "description": "The single pinned call under the tray. Big roll doubles the rules; bust dashes them.",
+      "html": "<p class=\"ds-result\"><span class=\"ds-result-l\">Play Dead</span><span class=\"ds-result-p\">+5</span></p><p class=\"ds-result ds-big\"><span class=\"ds-result-l\">Alpha</span><span class=\"ds-result-p\">+50</span></p><p class=\"ds-result ds-bust\"><span class=\"ds-result-l\">Scattered</span><span class=\"ds-result-p\">Turn lost</span></p>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-result{display:flex;width:max-content;align-items:baseline;gap:0.8rem;margin:0 0 0.8rem;padding:0.4rem 1.4rem;background:rgb(18 12 34 / 0.78);border-block:3px solid var(--ink);color:var(--ink);font-family:Grenze,Georgia,serif;font-weight:900;line-height:1;} .ds-result-l{font-size:2.6rem;} .ds-result-p{font-size:1.5rem;color:var(--ink-dim);} .ds-big{border-block:7px double var(--ink);background:rgb(78 58 134 / 0.85);} .ds-big .ds-result-p{color:var(--ink);} .ds-bust{border-block-style:dashed;border-color:var(--ink-dim);}"
+    },
+    {
+      "name": "Score Tiles",
+      "kind": "card",
+      "refersTo": "tile",
+      "description": "Pose tiles on the score sheet: solid rule by default, doubled for Alpha, dashed for bust.",
+      "html": "<ul class=\"ds-tiles\"><li class=\"ds-tile\"><p class=\"ds-tile-n\">Howl</p><p class=\"ds-tile-p\">20 pts</p></li><li class=\"ds-tile ds-alpha\"><p class=\"ds-tile-n\">Alpha</p><p class=\"ds-tile-p\">+50 pts</p></li><li class=\"ds-tile ds-tbust\"><p class=\"ds-tile-n\">Tangled</p><p class=\"ds-tile-p\">Bank wiped</p></li></ul>",
+      "css": ":host,:root{--night:#120c22;--paper:#1e1533;--paper-2:#2f2152;--block:#7a5cc4;--block-deep:#4e3a86;--ink:#e9e4f7;--ink-dim:#bdb2db;--ink-faint:#8d80b3;--frost:#a9c4e8;--ease-out:cubic-bezier(0.16,1,0.3,1);} .ds-tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,11.5rem);gap:0.6rem;} .ds-tile{padding:0.7rem 0.8rem 0.75rem;background:var(--paper-2);border-top:3px solid var(--ink);color:var(--ink);} .ds-tile-n,.ds-tile-p{margin:0;font-family:Grenze,Georgia,serif;font-weight:900;} .ds-tile-n{font-size:1.45rem;line-height:1.05;} .ds-tile-p{font-size:1.15rem;} .ds-alpha{border-top:7px double var(--ink);background:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120'%3E%3Cg fill='none' stroke='%23e9e4f7' stroke-linecap='round' stroke-opacity='.07'%3E%3Cpath stroke-width='3' d='M8 14q26 -3 52 1'/%3E%3Cpath stroke-width='2' d='M90 9q30 2 58 -1'/%3E%3Cpath stroke-width='4' d='M160 22q24 -2 50 2'/%3E%3Cpath stroke-width='2' d='M20 44q34 3 70 0'/%3E%3Cpath stroke-width='3' d='M118 52q28 -3 60 1'/%3E%3Cpath stroke-width='2' d='M4 78q22 2 46 -1'/%3E%3Cpath stroke-width='3' d='M70 86q36 -2 72 2'/%3E%3Cpath stroke-width='2' d='M168 92q20 2 44 -1'/%3E%3Cpath stroke-width='3' d='M30 110q30 -2 60 1'/%3E%3C/g%3E%3C/svg%3E\"),var(--block-deep);} .ds-tbust{border-top-style:dashed;border-top-color:var(--ink-dim);background:var(--paper);} .ds-tbust .ds-tile-p{color:var(--ink-dim);}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Midwinter Linocut",
+    "overview": "The whole game is one hand-carved linocut of a winter night, pulled in pale ink on night-violet paper. The tray, the trail, the cave and every panel are cut from the same block: fields carry faint horizontal gouge strokes, edges are hand-cut frames with slightly uneven corners, and every rule is a cut line rather than a drawn hairline. Nothing is glossy, nothing is rounded, nothing floats on a gradient.\n\nDensity is low and the 3D tray owns the screen. UI sits at the edges as carved blocks (the active seat top-left, two quiet tabs top-right, one result line and its actions centre-bottom, a full-width trail frieze at the foot) so the throw is never covered. State is told in line form, not hue: a doubled rule, a dashed rule, a solid cut. Saturated colour exists only to tell players apart.\n\nThe world refuses the casual-game default of glossy gradient panels and floating rounded HUD cards.",
+    "keyCharacteristics": [
+      "Two-colour print: pale lilac-white ink on night-violet paper, with one mid-violet second block for registration fills.",
+      "Every panel is a carved block: gouge texture over paper, a hand-cut frame, square corners.",
+      "State in cut line form: solid, doubled, dashed.",
+      "Heavy carved display face for every call; a plain workhorse sans for everything read or counted.",
+      "Player collar colours are the only saturated hue on screen."
+    ],
+    "rules": [
+      {
+        "name": "The Collar Reserve Rule",
+        "body": "Saturated colour belongs to the players. If a hue is not one of the six collar colours, it is violet paper or lilac ink. Results, warnings and celebrations never borrow a collar colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Seat Is A Variable Rule",
+        "body": "Collar colour is never hard-coded on a component; it arrives as the seat's colour at runtime and is applied to a rule, a stroke or a swatch, never to a text fill or a panel field.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Cuts Rule",
+        "body": "Grenze is for what is called out (names, calls, headings, tabs); Figtree is for what is read or counted. Numbers are always Figtree with tabular figures, except points written inside a call or tile.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Title Rule",
+        "body": "Grenze Gotisch sets the wordmark and nothing else.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ink Shadow Rule",
+        "body": "Shadows are soft and violet-black, never coloured and never hard-edged offsets. Disabled tabs drop their shadow entirely.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Line Not Hue Rule",
+        "body": "State is drawn in line form. Solid rule = present or selected; doubled rule = active seat, big roll, Alpha, winner; dashed rule = bust, remove, disabled, locked, focus. A state that needs explaining gets a different line, not a different colour.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do cut every panel as a carved block: gouge texture over paper, the hand-cut frame, square corners.",
+      "Do tell state with line form: solid, doubled (7px double) or dashed rules.",
+      "Do keep one second-block violet tab per view for the next action.",
+      "Do set scores in Figtree 800 with tabular figures, in fixed digit places that swap rather than fade.",
+      "Do carry a seat's identity with its collar colour on a rule, stroke or swatch only.",
+      "Do use the dashed 2px pale ink outline, offset 4px, for keyboard focus."
+    ],
+    "donts": [
+      "Don't use glossy gradient panels or floating rounded HUD cards.",
+      "Don't put saturated colour on anything that is not a player's collar; results, busts and wins stay in violet and ink.",
+      "Don't round corners; the wolf portrait disc is the only curve.",
+      "Don't use frost blue outside the moon and its light.",
+      "Don't set anything but the wordmark in Grenze Gotisch.",
+      "Don't fade scores in or out."
+    ]
+  }
+}
