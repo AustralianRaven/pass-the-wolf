@@ -9,7 +9,7 @@ export default defineConfig({
     target: 'es2022',
     chunkSizeWarningLimit: 4000,
     rollupOptions: {
-      input: { main: 'index.html', wolves: 'wolves.html' },
+      input: { main: 'index.html' },
     },
   },
   test: {

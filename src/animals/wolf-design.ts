@@ -2,7 +2,7 @@ import type { SculptPart, V3 } from '../sculpt/sdf';
 
 
 /**
- * Five direwolf candidates. Each is a sculpt (smooth union of parts) plus a painted coat.
+ * The wolf die's sculpt: a smooth union of parts plus a painted coat.
  * Body frame matches the dice: nose +X, back +Y, marked flank +Z, paws near y = 0.
  */
 export interface Coat {
@@ -18,7 +18,7 @@ export interface Coat {
   readonly mark: string;
 }
 
-export interface DirewolfDesign {
+export interface WolfDesign {
   readonly id: string;
   readonly name: string;
   readonly pitch: string;
@@ -37,6 +37,32 @@ export interface DirewolfDesign {
   readonly width: number;
   /** Optional density of the head and muzzle (default: carved light, 0.4). */
   readonly headWeight?: number;
+  /** Physics-only shaping that tunes the odds without changing the look. See docs/calibration.md. */
+  readonly tune?: WolfTune;
+}
+
+export interface WolfTune {
+  /** Half-size of the flat pad under the haunches the wolf sits back on to Howl (0 = none). */
+  readonly rump?: number;
+  /** Half-width (Z) of the flat pad along the spine that lets it rest on its back. */
+  readonly spine?: number;
+  /**
+   * The invisible pig-shaped belly around the torso, as ellipsoid radii [length, height, width].
+   * It gives the die real-pig-like rolling odds while the visible wolf stays slim.
+   */
+  readonly belly?: readonly [number, number, number];
+  /** Move the belly toward the marked flank (+Z): the wolf then lands mark-down (plain side up) more often. */
+  readonly bellyShift?: number;
+  /** Height of a flat invisible roof over the back and head, like a pig's back: lets it lie on its back (Play Dead). 0 = none. */
+  readonly roof?: number;
+  /** Half-width of the roof (Z). A broad back rests steadily, like a pig's. */
+  readonly roofWidth?: number;
+  /** Half-width (Z) of an invisible plate under the paws: a wider stance lands it on its feet (Prowl) more often. 0 = none. */
+  readonly stance?: number;
+  /** Density of the head and muzzle: heavier tips it nose-first (Sniff, Pounce) more often. */
+  readonly head?: number;
+  /** Density of the lower legs relative to the body: heavier feet land it upright more often. */
+  readonly feet?: number;
 }
 
 interface Leg {
@@ -68,6 +94,8 @@ interface Pose {
   readonly tail: readonly V3[];
   readonly tailR: readonly number[];
   readonly hackles?: { readonly c: V3; readonly r: V3 };
+  /** Thick fur pads over the ribs. Off for a sleek wolf. */
+  readonly flankFur?: boolean;
 }
 
 const mirror = (v: V3): V3 => [v[0], v[1], -v[2]];
@@ -86,8 +114,10 @@ function build(p: Pose): { parts: SculptPart[]; eyes: V3[]; nose: V3; neck: [V3,
   parts.push({ kind: 'ellipsoid', c: p.brisket, r: [0.13, 0.15, p.chestR * 0.75], blend: 0.07, group: 'torso' });
   // Thick flank fur over the ribs. It also makes a side landing rock, which keeps the dice lively.
   const flank: V3 = add(lerp(p.hip, p.chest, 0.5), [0, -0.01, (p.hipR + p.chestR) * 0.5 + 0.045]);
-  parts.push({ kind: 'ellipsoid', c: flank, r: [0.12, 0.045, 0.07], blend: 0.07, fur: 1.8, group: 'flankL' });
-  parts.push({ kind: 'ellipsoid', c: mirror(flank), r: [0.12, 0.045, 0.07], blend: 0.07, fur: 1.8, group: 'flankR' });
+  if (p.flankFur !== false) {
+    parts.push({ kind: 'ellipsoid', c: flank, r: [0.12, 0.045, 0.07], blend: 0.07, fur: 1.8, group: 'flankL' });
+    parts.push({ kind: 'ellipsoid', c: mirror(flank), r: [0.12, 0.045, 0.07], blend: 0.07, fur: 1.8, group: 'flankR' });
+  }
   if (p.hackles) parts.push({ kind: 'ellipsoid', c: p.hackles.c, r: p.hackles.r, blend: 0.08, fur: 2.2, group: 'torso' });
 
   // Neck, ruff, head.
@@ -157,61 +187,8 @@ function pairs(front: Leg, hind: Leg, frontFar?: Leg, hindFar?: Leg): [Leg, Leg,
   return [front, frontFar ?? m(front), hind, hindFar ?? m(hind)];
 }
 
-// ---------- 1. Warden: the classic direwolf, four-square and massive ----------
-const warden = build({
-  hip: [-0.3, 0.47, 0],
-  chest: [0.22, 0.48, 0],
-  hipR: 0.14,
-  chestR: 0.18,
-  brisket: [0.27, 0.35, 0],
-  neckBase: [0.3, 0.55, 0],
-  head: [0.5, 0.7, 0],
-  headR: [0.12, 0.1, 0.095],
-  snoutTip: [0.73, 0.63, 0],
-  snoutR: [0.062, 0.034],
-  earBase: 0.055,
-  earTip: [-0.02, 0.11, 0.018],
-  earR: 0.038,
-  ruff: [0.35, 0.57, 0],
-  ruffR: [0.16, 0.17, 0.165],
-  ruffFur: 2.6,
-  legs: pairs(
-    leg([0.27, 0.42, W], [0.29, 0.27, W], [0.3, 0.09, W], [0.31, 0.03, W], [0.07, 0.046, 0.036]),
-    leg([-0.3, 0.43, W], [-0.22, 0.26, W + 0.005], [-0.35, 0.13, W], [-0.33, 0.03, W], [0.095, 0.05, 0.036]),
-  ),
-  tail: [[-0.42, 0.5, 0], [-0.54, 0.38, 0], [-0.6, 0.22, 0], [-0.6, 0.12, 0]],
-  tailR: [0.05, 0.075, 0.06, 0.03],
-});
-
-// ---------- 2. Stalker: crouched, head low, hackles up ----------
-const stalker = build({
-  hip: [-0.3, 0.42, 0],
-  chest: [0.2, 0.39, 0],
-  hipR: 0.14,
-  chestR: 0.17,
-  brisket: [0.24, 0.28, 0],
-  neckBase: [0.3, 0.43, 0],
-  head: [0.55, 0.45, 0],
-  headR: [0.12, 0.095, 0.095],
-  snoutTip: [0.78, 0.4, 0],
-  snoutR: [0.06, 0.033],
-  earBase: 0.06,
-  earTip: [-0.035, 0.1, 0.025],
-  earR: 0.036,
-  ruff: [0.36, 0.46, 0],
-  ruffR: [0.14, 0.13, 0.14],
-  ruffFur: 2.2,
-  hackles: { c: [0.08, 0.53, 0], r: [0.3, 0.04, 0.045] },
-  legs: pairs(
-    leg([0.25, 0.33, W], [0.36, 0.2, W], [0.33, 0.07, W], [0.36, 0.03, W], [0.064, 0.043, 0.034]),
-    leg([-0.3, 0.38, W], [-0.17, 0.22, W + 0.01], [-0.36, 0.11, W], [-0.31, 0.03, W], [0.09, 0.048, 0.035]),
-  ),
-  tail: [[-0.42, 0.46, 0], [-0.58, 0.42, 0], [-0.72, 0.36, 0]],
-  tailR: [0.05, 0.07, 0.035],
-});
-
-// ---------- 3. Frostmane: proud alpha, head high, chest out, tail raised ----------
-const frostmane = build({
+// ---------- The winter wolf: proud and pale, head high, chest out, a great mane and tail raised ----------
+const winter = build({
   hip: [-0.29, 0.48, 0],
   chest: [0.2, 0.52, 0],
   hipR: 0.14,
@@ -225,9 +202,10 @@ const frostmane = build({
   earBase: 0.05,
   earTip: [0.0, 0.12, 0.012],
   earR: 0.037,
-  ruff: [0.33, 0.66, 0],
-  ruffR: [0.17, 0.2, 0.18],
-  ruffFur: 3,
+  ruff: [0.31, 0.63, 0],
+  ruffR: [0.15, 0.18, 0.15],
+  ruffFur: 2.4,
+  flankFur: false,
   legs: pairs(
     leg([0.27, 0.45, W], [0.29, 0.28, W], [0.29, 0.09, W], [0.3, 0.03, W], [0.072, 0.047, 0.036]),
     leg([-0.29, 0.44, W], [-0.21, 0.27, W + 0.005], [-0.34, 0.13, W], [-0.32, 0.03, W], [0.095, 0.05, 0.036]),
@@ -236,112 +214,17 @@ const frostmane = build({
   tailR: [0.05, 0.075, 0.06, 0.03],
 });
 
-// ---------- 4. Timber Runner: mid-lope, stretched out, tail streaming ----------
-const runner = build({
-  hip: [-0.33, 0.44, 0],
-  chest: [0.22, 0.45, 0],
-  hipR: 0.13,
-  chestR: 0.17,
-  brisket: [0.27, 0.33, 0],
-  neckBase: [0.32, 0.52, 0],
-  head: [0.56, 0.6, 0],
-  headR: [0.115, 0.095, 0.09],
-  snoutTip: [0.8, 0.56, 0],
-  snoutR: [0.058, 0.032],
-  earBase: 0.055,
-  earTip: [-0.06, 0.09, 0.02],
-  earR: 0.035,
-  ruff: [0.37, 0.53, 0],
-  ruffR: [0.15, 0.15, 0.15],
-  ruffFur: 2,
-  legs: pairs(
-    // near fore reaching forward, far fore under the body
-    leg([0.28, 0.4, W], [0.4, 0.26, W], [0.48, 0.12, W], [0.52, 0.03, W], [0.066, 0.044, 0.034]),
-    // near hind driving back, far hind under the body
-    leg([-0.33, 0.4, W], [-0.36, 0.24, W], [-0.52, 0.12, W], [-0.56, 0.03, W], [0.09, 0.048, 0.034]),
-    leg([0.26, 0.4, -W], [0.25, 0.25, -W], [0.2, 0.1, -W], [0.2, 0.03, -W], [0.066, 0.044, 0.034]),
-    leg([-0.31, 0.4, -W], [-0.18, 0.25, -W], [-0.24, 0.1, -W], [-0.2, 0.03, -W], [0.09, 0.048, 0.034]),
-  ),
-  tail: [[-0.45, 0.46, 0], [-0.62, 0.43, 0], [-0.78, 0.38, 0]],
-  tailR: [0.045, 0.065, 0.03],
-});
+export const WINTER_WOLF_DESIGN: WolfDesign = {
+  id: 'winter',
+  name: 'Winter Wolf',
+  pitch: 'Pale coat, thick ruff, steady on its feet.',
+  ...winter,
+  head: [0.44, 0.84, 0],
+  fur: 0.013,
+  width: 1,
+  coat: { base: '#e3e0d8', saddle: '#a9a69f', under: '#f6f3ec', grizzle: 0.15, mark: '#4e3a86' },
+  tune: { belly: [0.46, 0.3, 0.36], roof: 0.98, roofWidth: 0.42, stance: 0.24, rump: 0.06, spine: 0.12, feet: 6, head: 0.65 },
+};
 
-// ---------- 5. Old Grizzle: heavy old wolf, huge head, shaggy coat ----------
-const grizzle = build({
-  hip: [-0.29, 0.46, 0],
-  chest: [0.2, 0.47, 0],
-  hipR: 0.15,
-  chestR: 0.2,
-  brisket: [0.26, 0.33, 0],
-  neckBase: [0.3, 0.53, 0],
-  head: [0.5, 0.64, 0],
-  headR: [0.135, 0.112, 0.11],
-  snoutTip: [0.74, 0.57, 0],
-  snoutR: [0.07, 0.04],
-  earBase: 0.065,
-  earTip: [-0.035, 0.085, 0.03],
-  earR: 0.04,
-  ruff: [0.34, 0.52, 0],
-  ruffR: [0.19, 0.2, 0.19],
-  ruffFur: 3.4,
-  legs: pairs(
-    leg([0.26, 0.41, W + 0.01], [0.28, 0.26, W + 0.01], [0.29, 0.09, W + 0.01], [0.3, 0.03, W + 0.01], [0.078, 0.052, 0.04]),
-    leg([-0.29, 0.42, W + 0.01], [-0.21, 0.25, W + 0.015], [-0.34, 0.12, W + 0.01], [-0.32, 0.03, W + 0.01], [0.1, 0.055, 0.04]),
-  ),
-  tail: [[-0.42, 0.48, 0], [-0.53, 0.33, 0], [-0.56, 0.18, 0], [-0.54, 0.1, 0]],
-  tailR: [0.06, 0.085, 0.07, 0.035],
-});
-
-export const DIREWOLVES: readonly DirewolfDesign[] = [
-  {
-    id: 'warden',
-    width: 1.35,
-    name: 'Warden',
-    pitch: 'The classic direwolf. Four-square, deep-chested, a heavy ruff and a tail carried low.',
-    ...warden,
-    head: [0.5, 0.7, 0],
-    fur: 0.012,
-    coat: { base: '#7d7a74', saddle: '#2f2c29', under: '#d6cdbd', grizzle: 0.35, mark: '#efe6d4' },
-  },
-  {
-    id: 'stalker',
-    width: 1.12,
-    name: 'Stalker',
-    pitch: 'Crouched for the kill. Head low, hackles raised along the spine, tail straight back.',
-    ...stalker,
-    head: [0.55, 0.42, 0],
-    fur: 0.011,
-    coat: { base: '#55514c', saddle: '#141211', under: '#a39d92', grizzle: 0.25, mark: '#e9dcc4' },
-  },
-  {
-    id: 'frostmane',
-    width: 1.55,
-    name: 'Frostmane',
-    pitch: 'The pack leader. Chest out, head high, a great white mane and tail raised.',
-    ...frostmane,
-    head: [0.44, 0.84, 0],
-    fur: 0.013,
-    coat: { base: '#e3e0d8', saddle: '#a9a69f', under: '#f6f3ec', grizzle: 0.15, mark: '#3a3f52' },
-  },
-  {
-    id: 'runner',
-    width: 1.31,
-    name: 'Timber Runner',
-    pitch: 'Caught mid-lope. Long and lean, legs reaching and driving, tail streaming behind.',
-    ...runner,
-    head: [0.56, 0.6, 0],
-    fur: 0.01,
-    coat: { base: '#9a7148', saddle: '#4a3322', under: '#e2cfae', grizzle: 0.3, mark: '#2b1d12' },
-  },
-  {
-    id: 'grizzle',
-    width: 1.33,
-    headWeight: 1.8,
-    name: 'Old Grizzle',
-    pitch: 'An old giant. Broad skull, thick legs, and a shaggy, grizzled coat.',
-    ...grizzle,
-    head: [0.5, 0.64, 0],
-    fur: 0.018,
-    coat: { base: '#6b665d', saddle: '#26231f', under: '#b9b2a4', grizzle: 0.6, mark: '#efe6d4' },
-  },
-];
+/** Every wolf design the game can carve, in picker order. */
+export const WOLF_DESIGNS: readonly WolfDesign[] = [WINTER_WOLF_DESIGN];

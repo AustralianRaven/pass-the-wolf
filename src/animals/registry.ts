@@ -1,14 +1,14 @@
 import type { AnimalDefinition } from './body';
-import { DIREWOLF_ANIMALS } from './direwolf-animals';
+import { WINTER_WOLF, WOLF_DICE } from './wolf-dice';
 import { WOLF } from './wolf';
 
-/** Dice a player can pick, in picker order. */
-export const PICKABLE: readonly AnimalDefinition[] = DIREWOLF_ANIMALS;
-export const DEFAULT_DIE = 'warden';
+/** Dice a player can pick, in picker order. Only the winter wolf is carved so far. */
+export const PICKABLE: readonly AnimalDefinition[] = WOLF_DICE;
+export const DEFAULT_DIE = WINTER_WOLF.scoring.id;
 
 /**
- * Every die the engine knows. `wolf` is the original capsule wolf: no longer offered,
- * kept as a fast physics fixture and so old saved settings still resolve.
+ * Every die the engine knows. `wolf` is the original capsule wolf: never offered,
+ * kept as a fast physics fixture for tests.
  */
 export const ANIMALS: Readonly<Record<string, AnimalDefinition>> = Object.fromEntries([
   ['wolf', WOLF],

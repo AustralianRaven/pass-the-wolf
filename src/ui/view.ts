@@ -5,6 +5,7 @@ import { SEAT_COLOURS, TARGET_CHOICES, cpuDice, type Setup } from '../game/setti
 import { DEFAULT_DIE, PICKABLE } from '../animals/registry';
 import { ALPHA_POINTS, DEN_POINTS, DOUBLE_MULTIPLIER, MAX_SEATS, MIN_SEATS } from '../rules/constants';
 import { SCORING_POSES } from '../rules/poses';
+import type { DebugSettings } from '../game/debug';
 
 /** Tiny element helper: text always goes through textContent, so names can't inject markup. */
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -95,6 +96,7 @@ export interface ViewHandlers {
   onTakeTurn(): void;
   onNewGame(): void;
   onRematch(): void;
+  onDebugChange(settings: DebugSettings): void;
 }
 
 /** All DOM for the game: setup block, wolf den, HUD, trail strip, score sheet and handover band. */
@@ -129,6 +131,8 @@ export class GameView {
   private denIndex = 0;
   private setup!: Setup;
   private seatColours: string[] = [];
+  private readonly settingsDialog: HTMLDialogElement;
+  private debug: DebugSettings = { enabled: false, showHitboxes: false };
 
   constructor(
     mount: HTMLElement,
@@ -209,8 +213,75 @@ export class GameView {
       svg('path', { class: 'moon__gouge', d: 'M128 62 q14 6 22 18 M138 104 q12 2 20 -4 M124 146 q16 -2 26 -12' }),
       svg('path', { class: 'moon__star', d: 'M40 70 L44 80 L54 84 L44 88 L40 98 L36 88 L26 84 L36 80 Z M70 140 L72 146 L78 148 L72 150 L70 156 L68 150 L62 148 L68 146 Z' }),
     );
-    this.root = el('div', { class: 'table' }, [this.canvas, moon, this.hud, this.handover, this.setupSheet, this.scoreDialog, this.den]);
+    this.settingsDialog = this.buildSettings();
+    const gear = el('button', { class: 'gear', attrs: { type: 'button', 'aria-label': 'Settings' } }, [this.gearIcon()]);
+    gear.addEventListener('click', () => this.openSettings());
+
+    this.root = el('div', { class: 'table' }, [this.canvas, moon, this.hud, this.handover, this.setupSheet, gear, this.scoreDialog, this.den, this.settingsDialog]);
     mount.append(this.root);
+  }
+
+  // ---------- Settings ----------
+
+  private gearIcon(): SVGSVGElement {
+    const icon = svg('svg', { viewBox: '0 0 24 24', class: 'icon', 'aria-hidden': 'true' });
+    icon.append(
+      svg('circle', { cx: 12, cy: 12, r: 3.2 }),
+      svg('path', { d: 'M12 2.5v3 M12 18.5v3 M2.5 12h3 M18.5 12h3 M5.3 5.3l2.1 2.1 M16.6 16.6l2.1 2.1 M5.3 18.7l2.1-2.1 M16.6 7.4l2.1-2.1' }),
+      svg('circle', { cx: 12, cy: 12, r: 6.4 }),
+    );
+    return icon;
+  }
+
+  private buildSettings(): HTMLDialogElement {
+    const close = el('button', { class: 'tab tab--quiet', text: 'Close', attrs: { type: 'button' } });
+    const body = el('div', { class: 'settings__body' });
+    const dialog = el('dialog', { class: 'sheet settings block', attrs: { 'aria-labelledby': 'settings-title' } }, [
+      el('header', { class: 'sheet__head' }, [el('h2', { text: 'Settings', attrs: { id: 'settings-title' } }), close]),
+      body,
+    ]);
+    close.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    return dialog;
+  }
+
+  /** Set the stored debug options before the first render. */
+  setDebugSettings(s: DebugSettings): void {
+    this.debug = s;
+  }
+
+  private renderSettings: () => void = () => {};
+
+  private openSettings(): void {
+    const body = this.settingsDialog.querySelector('.settings__body')!;
+    const toggle = (label: string, hint: string, checked: boolean, disabled: boolean, onChange: (on: boolean) => void) => {
+      const input = el('input', { attrs: { type: 'checkbox' } });
+      input.checked = checked;
+      input.disabled = disabled;
+      input.addEventListener('change', () => onChange(input.checked));
+      return el('label', { class: `toggle${disabled ? ' is-disabled' : ''}` }, [input, el('span', { class: 'toggle__label', text: label }), el('span', { class: 'toggle__hint', text: hint })]);
+    };
+    this.renderSettings = () => {
+      body.replaceChildren(
+        el('fieldset', { class: 'settings__group' }, [
+          el('legend', { class: 'sheet__h', text: 'Debug' }),
+          toggle('Debug mode', 'Unlocks the tools below.', this.debug.enabled, false, (on) => this.changeDebug({ ...this.debug, enabled: on })),
+          el('div', { class: 'settings__sub' }, [
+            toggle('Show hitboxes', 'Draw the real physics shapes the wolves roll on. Gold parts are the hidden pig belly and pads.', this.debug.enabled && this.debug.showHitboxes, !this.debug.enabled, (on) => this.changeDebug({ ...this.debug, showHitboxes: on })),
+          ]),
+        ]),
+      );
+    };
+    this.renderSettings();
+    this.settingsDialog.showModal();
+  }
+
+  private changeDebug(s: DebugSettings): void {
+    this.debug = s;
+    this.handlers.onDebugChange(s);
+    this.renderSettings();
   }
 
   // ---------- Setup ----------

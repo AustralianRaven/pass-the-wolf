@@ -15,8 +15,27 @@ type Collider = RAPIER_NS.Collider;
  */
 export const GRAVITY = -245;
 export const TIMESTEP = 1 / 240;
-/** Arena half-extents (the blanket inside the tray walls). */
-export const ARENA = { halfX: 5.4, halfZ: 3.5, wallHeight: 3 } as const;
+/**
+ * The hexagonal dice tray. Corners point along ±X (toward and away from the thrower);
+ * `radius` is centre to corner, `apothem` centre to the middle of a wall.
+ * halfX / halfZ are the bounding box, for cameras and shadows.
+ */
+const HEX_RADIUS = 4.6;
+export const ARENA = {
+  radius: HEX_RADIUS,
+  apothem: HEX_RADIUS * Math.cos(Math.PI / 6),
+  halfX: HEX_RADIUS,
+  halfZ: HEX_RADIUS * Math.cos(Math.PI / 6),
+  wallHeight: 3,
+} as const;
+
+/** The six tray walls as centre, half-length and heading (radians about +Y). */
+export function hexWalls(): { x: number; z: number; halfLength: number; heading: number }[] {
+  return Array.from({ length: 6 }, (_, k) => {
+    const a = (Math.PI / 3) * k + Math.PI / 6;
+    return { x: Math.cos(a) * ARENA.apothem, z: Math.sin(a) * ARENA.apothem, halfLength: ARENA.radius / 2, heading: a };
+  });
+}
 
 const WOOD = { friction: 0.55, restitution: 0.32 };
 const WOOL = { friction: 0.85, restitution: 0.18 };
@@ -131,15 +150,16 @@ export class DiceWorld {
       ground,
     );
     const h = ARENA.wallHeight;
-    const walls: Array<[number, number, number, number, number, number]> = [
-      [ARENA.halfX + 0.25, h / 2, 0, 0.25, h / 2, ARENA.halfZ + 0.5],
-      [-ARENA.halfX - 0.25, h / 2, 0, 0.25, h / 2, ARENA.halfZ + 0.5],
-      [0, h / 2, ARENA.halfZ + 0.25, ARENA.halfX + 0.5, h / 2, 0.25],
-      [0, h / 2, -ARENA.halfZ - 0.25, ARENA.halfX + 0.5, h / 2, 0.25],
-    ];
-    for (const [x, y, z, hx, hy, hz] of walls) {
+    const t = 0.25;
+    for (const w of hexWalls()) {
+      // Thickness runs along the wall's outward normal; length overlaps at the corners.
+      const yaw = -w.heading;
       this.world.createCollider(
-        R.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setFriction(WALL.friction).setRestitution(WALL.restitution),
+        R.ColliderDesc.cuboid(t, h / 2, w.halfLength + 0.3)
+          .setTranslation(w.x + Math.cos(w.heading) * t, h / 2, w.z + Math.sin(w.heading) * t)
+          .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) })
+          .setFriction(WALL.friction)
+          .setRestitution(WALL.restitution),
         ground,
       );
     }
@@ -169,11 +189,11 @@ export class DiceWorld {
     const dirX = Math.cos(input.angle);
     const dirZ = Math.sin(input.angle);
     // Start behind the centre, opposite the throw direction.
-    const startX = -dirX * (ARENA.halfX - 1.4);
-    const startZ = -dirZ * (ARENA.halfZ - 1.1);
+    const startX = -dirX * (ARENA.radius - 1.6);
+    const startZ = -dirZ * (ARENA.apothem - 1.6);
 
     this.dice.forEach((die, i) => {
-      const offset = (i === 0 ? -1 : 1) * 1.1;
+      const offset = (i === 0 ? -1 : 1) * 1.0;
       const yaw = rng() * Math.PI * 2;
       const pitch = (rng() - 0.5) * Math.PI;
       const roll = rng() * Math.PI * 2;

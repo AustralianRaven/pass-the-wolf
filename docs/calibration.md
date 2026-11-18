@@ -1,5 +1,41 @@
 # Calibration
 
+## Status (2026-11-18): hitbox tuning in progress, NOT yet on target
+
+The winter wolf now rolls on an **invisible hitbox** (see issue #1): the wolf's real head, legs, ears and
+tail, plus hidden pads that only the physics sees: a pig-shaped belly, a flat roof over back and head,
+a stance plate under the paws, a spine pad and a rump seat. The visible wolf is slim and is lifted or
+dropped each frame so its lowest point matches the hitbox's lowest point. Turn on Settings → Debug mode →
+Show hitboxes to see the real shapes (gold = hidden pads).
+
+Targets (per wolf, Kern 2006 with the Howl added): Plain side 34.8%, Moon side 30.0%, Play Dead 22.4%,
+Prowl 8.8%, Sniff 3.0%, Pounce 0.6%, Howl 0.4%. Per roll: Tangled 1.6%, Alpha 0.05%. Tolerance ±10% of
+each target, auto-roll only.
+
+Current tuning (`WINTER_WOLF_DESIGN.tune`), 800 throws:
+
+| Plain | Moon | Play Dead | Prowl | Sniff | Pounce | Howl | Tangled | Alpha |
+|---|---|---|---|---|---|---|---|---|
+| 33.3 | 33.3 | **11.1** | 9.6 | **9.2** | **0.19** | **3.3** | 1.63 | 0.13 (1 seen) |
+
+Bold = outside its band. Learned so far:
+
+- A wider roof raises Play Dead, but its front edge also makes a stable nose-down tripod (Sniff too high).
+  Next: keep the roof's front edge behind the head, or round its ends.
+- The rump seat at 0.05–0.07 gives a Howl of 3–5%. Next: shrink it (around 0.02) or move it lower.
+- Belly width barely changes the side share; the roof width and the stance plate do.
+- Pounce boundary: `classify.ts` LEAN_NOSE / LEAN_TILT, set from `tools/rests.ts --nose`.
+
+Workflow: `sh tools/odds.sh winter 800 '{"roofWidth":0.4}'` tries a tuning without editing code.
+Several can run in parallel (one core each, below-normal priority). `npx tsx tools/calibrate.ts N winter
+--dump=calibration/x.json` saves every rest for offline re-classification. Confirm with 20,000 throws;
+Alpha needs ~800,000 (run overnight).
+
+---
+
+## History (the retired direwolves and capsule wolf)
+
+
 Point values come from how often each pose actually happens, measured by throwing the real
 wolf geometry with real physics. Re-run after any change to the wolf's shape or the physics constants.
 

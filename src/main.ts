@@ -3,10 +3,10 @@ import '@fontsource/grenze/900.css';
 import '@fontsource-variable/figtree/wght.css';
 import './ui/styles.css';
 import { GameController } from './game/controller';
-import { readDebugFlags } from './game/debug';
+import { loadDebugSettings, readDebugFlags, saveDebugSettings } from './game/debug';
 import { loadSetup } from './game/settings';
 import { loadRapier } from './physics/dice-world';
-import { prewarmDirewolves, TableScene } from './render/scene';
+import { prewarmWolves, TableScene } from './render/scene';
 import { GameView } from './ui/view';
 
 async function boot(): Promise<void> {
@@ -14,7 +14,13 @@ async function boot(): Promise<void> {
   if (!mount) throw new Error('Missing #app root');
 
   let controller: GameController | null = null;
+  let scene: TableScene | null = null;
+  const debug = loadDebugSettings();
   const view = new GameView(mount, {
+    onDebugChange: (s) => {
+      saveDebugSettings(s);
+      scene?.setShowHitboxes(s.enabled && s.showHitboxes);
+    },
     onStart: (setup) => controller?.start(setup),
     onRoll: () => controller?.rollButton(),
     onBank: () => controller?.bank(),
@@ -22,13 +28,15 @@ async function boot(): Promise<void> {
     onNewGame: () => controller?.newTable(),
     onRematch: () => controller?.rematch(),
   });
+  view.setDebugSettings(debug);
   view.showSetup(loadSetup());
 
-  const scene = new TableScene(view.canvas);
+  scene = new TableScene(view.canvas);
+  scene.setShowHitboxes(debug.enabled && debug.showHitboxes);
   const R = await loadRapier();
   controller = new GameController(R, scene, view, readDebugFlags());
   document.documentElement.dataset.ready = 'true';
-  prewarmDirewolves();
+  prewarmWolves();
 }
 
 boot().catch((err: unknown) => {

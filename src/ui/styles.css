@@ -252,7 +252,7 @@ select {
 .corner {
   position: absolute;
   top: 1.25rem;
-  right: 1.25rem;
+  right: 5rem;
   display: flex;
   gap: 0.6rem;
 }
@@ -800,6 +800,73 @@ select {
   text-align: center;
   color: var(--ink-dim);
   font-size: 0.9rem;
+}
+
+/* ---------- Settings ---------- */
+.gear {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 6;
+  width: 3.1rem;
+  height: 3.1rem;
+  display: grid;
+  place-items: center;
+  background: var(--gouge), var(--paper-2);
+  border: 0;
+  border-bottom: 3px solid var(--ink);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 8px 18px -8px rgb(6 3 16 / 0.8);
+  transition: background-color 160ms var(--ease-out);
+}
+.gear:hover {
+  background-color: var(--block-deep);
+}
+.gear .icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+.settings {
+  width: min(32rem, calc(100vw - 2rem));
+}
+.settings__group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.settings__sub {
+  padding-left: 1.6rem;
+  border-left: 2px dashed var(--ink-faint);
+}
+.toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.7rem;
+  align-items: center;
+  padding: 0.6rem 0.7rem;
+  background: var(--paper-2);
+  cursor: pointer;
+}
+.toggle input {
+  grid-row: span 2;
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--block);
+}
+.toggle__label {
+  font-weight: 800;
+}
+.toggle__hint {
+  grid-column: 2;
+  color: var(--ink-dim);
+  font-size: 0.88rem;
+}
+.toggle.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ---------- Score sheet ---------- */

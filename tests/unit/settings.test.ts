@@ -15,22 +15,22 @@ describe('Feature: seat dice settings', () => {
   beforeEach(() => stubStorage());
   afterEach(() => vi.unstubAllGlobals());
 
-  it('Scenario: Given solo defaults, Then you throw Wardens and the computer brings a different pair', () => {
+  it('Scenario: Given solo defaults, Then every seat throws a pair of winter wolves', () => {
     const s = defaultSetup('solo');
-    expect(s.seats[0]?.dice, 'Then the human seat throws two Wardens').toEqual(['warden', 'warden']);
-    expect(s.seats[1]?.dice, 'Then the computer throws Stalker + Old Grizzle').toEqual(['stalker', 'grizzle']);
+    expect(s.seats[0]?.dice, 'Then the human seat throws two winter wolves').toEqual(['winter', 'winter']);
+    expect(s.seats[1]?.dice, 'Then the computer throws two winter wolves').toEqual(['winter', 'winter']);
   });
 
-  it('Scenario: Given a seat picks Frostmane and Stalker, Then the game seat throws that pair', () => {
+  it('Scenario: Given a table seat, Then the game seat throws its winter wolf pair', () => {
     const s = defaultSetup('table');
-    s.seats[0]!.dice = ['frostmane', 'stalker'];
-    expect(toSeats(s)[0]?.dice, 'Then the mixed pair reaches the rules engine').toEqual(['frostmane', 'stalker']);
+    expect(toSeats(s)[0]?.dice, 'Then the pair reaches the rules engine').toEqual(['winter', 'winter']);
   });
 
   it.each([
     ['saved before dice existed', undefined],
     ['naming the retired capsule wolf', ['wolf', 'wolf']],
-    ['naming an unknown die', ['badger', 'warden']],
+    ['naming a retired direwolf', ['warden', 'frostmane']],
+    ['naming an unknown die', ['badger', 'winter']],
   ])('Scenario: Given settings %s, When they load, Then each seat gets a valid pair', (_label, dice) => {
     const saved = {
       mode: 'table',
@@ -43,7 +43,7 @@ describe('Feature: seat dice settings', () => {
     stubStorage({ 'pass-the-wolf:setup': JSON.stringify(saved) });
     const loaded = loadSetup();
     expect(loaded.seats[0]?.name, 'Then the names survive').toBe('Kat');
-    expect(loaded.seats[0]?.dice, 'Then the human falls back to Wardens').toEqual(['warden', 'warden']);
-    expect(loaded.seats[1]?.dice, 'Then the computer falls back to its own pair').toEqual(['stalker', 'grizzle']);
+    expect(loaded.seats[0]?.dice, 'Then the human falls back to winter wolves').toEqual(['winter', 'winter']);
+    expect(loaded.seats[1]?.dice, 'Then the computer falls back to winter wolves').toEqual(['winter', 'winter']);
   });
 });

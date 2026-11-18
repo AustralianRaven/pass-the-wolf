@@ -23,21 +23,14 @@ export interface Setup {
 /** Seat colours: pegs, collars and the handover band. Lilac first. */
 export const SEAT_COLOURS = ['#a58bd6', '#e07a3a', '#5b9bd5', '#6fae6a', '#e3b341', '#efe7da'] as const;
 export const CPU_NAMES = ['Ember', 'Birch', 'Sleet', 'Juniper', 'Flint'] as const;
-/** Computer seats each bring a different pair, so the table shows off the pack. */
-export const CPU_DICE: readonly DicePair[] = [
-  ['stalker', 'grizzle'],
-  ['frostmane', 'runner'],
-  ['warden', 'frostmane'],
-  ['runner', 'stalker'],
-  ['grizzle', 'warden'],
-];
 export const TARGET_CHOICES = [50, 100, 150, 200] as const;
 
 const STORAGE_KEY = 'pass-the-wolf:setup';
 const HUMAN_DICE: DicePair = [DEFAULT_DIE, DEFAULT_DIE];
 
-export function cpuDice(index: number): DicePair {
-  return [...(CPU_DICE[index % CPU_DICE.length] ?? HUMAN_DICE)] as DicePair;
+/** Computer seats throw the same wolves as everyone else. The index is kept for when more wolves exist. */
+export function cpuDice(_index: number): DicePair {
+  return [...HUMAN_DICE];
 }
 
 export function defaultSetup(mode: TableMode = 'solo'): Setup {

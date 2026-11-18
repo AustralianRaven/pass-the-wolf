@@ -2,19 +2,41 @@
  * Headless calibration: throws a pair of animal dice many times with real physics
  * and prints how often each pose and pair result comes up.
  *
- *   npm run calibrate -- [throws=20000] [animalA=wolf] [animalB=animalA] [--json]
+ *   npm run calibrate -- [throws=20000] [animalA=winter] [animalB=animalA] [--json]
  */
+import { writeFileSync } from 'node:fs';
+import { constants, setPriority } from 'node:os';
 import { getAnimal } from '../src/animals/registry';
+import { WOLF_DESIGNS } from '../src/animals/wolf-design';
+import { wolfDie } from '../src/animals/wolf-dice';
+import { localUp } from '../src/physics/classify';
 import { DiceWorld, loadRapier } from '../src/physics/dice-world';
 import { createRng } from '../src/physics/rng';
 import { GENERIC_POSES, type GenericPose } from '../src/rules/poses';
 import { scoreRoll, type RollKind } from '../src/rules/scoring';
 
+// Long runs stay out of the way of whatever else the machine is doing.
+try {
+  setPriority(constants.priority.PRIORITY_BELOW_NORMAL);
+} catch {
+  /* not permitted: run at normal priority */
+}
+
+const tuneArg = process.argv.find((a) => a.startsWith('--tune='));
+/** --dump=file writes every throw's resting up-vectors and contacts, for re-classifying offline. */
+const dumpArg = process.argv.find((a) => a.startsWith('--dump='));
+const dump: { up: number[][]; touching: boolean; stacked: boolean }[] = [];
+const tune = tuneArg ? (JSON.parse(tuneArg.slice('--tune='.length)) as Record<string, number>) : null;
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const asJson = process.argv.includes('--json');
 const throws = Number(args[0] ?? 20000);
-const animalA = getAnimal(args[1] ?? 'wolf');
-const animalB = getAnimal(args[2] ?? args[1] ?? 'wolf');
+/** --tune='{"rump":0.06}' rebuilds a wolf design with that tuning, without editing the source. */
+const die = (id: string) => {
+  const design = WOLF_DESIGNS.find((d) => d.id === id);
+  return tune && design ? wolfDie(design, tune) : getAnimal(id);
+};
+const animalA = die(args[1] ?? 'winter');
+const animalB = die(args[2] ?? args[1] ?? 'winter');
 
 const R = await loadRapier();
 const rng = createRng(20261113);
@@ -30,6 +52,13 @@ for (let i = 0; i < throws; i++) {
   const world = new DiceWorld(R, [animalA, animalB]);
   world.throwDice({ angle: (rng() - 0.5) * 0.8, power: 0.3 + rng() * 0.7, seed: Math.floor(rng() * 2 ** 32) });
   const settled = world.settle();
+  if (dumpArg) {
+    dump.push({
+      up: world.dice.map((d) => localUp(d.body.rotation()).map((v) => Number(v.toFixed(4)))),
+      touching: settled.touching,
+      stacked: settled.stacked,
+    });
+  }
   world.free();
   if (!settled.settled) unsettled++;
   totalSteps += settled.steps;
@@ -58,6 +87,8 @@ const report = {
   resultPct: Object.fromEntries([...kindCounts].sort((a, b) => b[1] - a[1]).map(([k, n]) => [k, pct(n, throws)])),
   avgPointsPerRoll: Number((totalPoints / throws).toFixed(2)),
 };
+
+if (dumpArg) writeFileSync(dumpArg.slice('--dump='.length), JSON.stringify({ tune, throws, dump }));
 
 if (asJson) {
   console.log(JSON.stringify(report, null, 2));

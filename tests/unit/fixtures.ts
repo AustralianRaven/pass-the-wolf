@@ -15,9 +15,10 @@ export const TEST_SHEEP: AnimalScoring = {
     back: 'Legs Up',
     upright: 'Graze',
     noseDown: 'Nibble',
+    lean: 'Headbutt',
     tailDown: 'Woolpack',
   },
-  points: { back: 4, upright: 6, noseDown: 12, tailDown: 20 },
+  points: { back: 4, upright: 6, noseDown: 12, lean: 16, tailDown: 20 },
 };
 
 export const wolf = WOLF_SCORING;

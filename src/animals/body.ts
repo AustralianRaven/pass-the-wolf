@@ -13,7 +13,7 @@ export type BodyPart =
   | { readonly kind: 'ball'; readonly at: Vec3; readonly radius: number; readonly density?: number }
   | { readonly kind: 'box'; readonly at: Vec3; readonly half: Vec3; readonly density?: number }
   /** Convex hull of a point cloud (used for sculpted animals). */
-  | { readonly kind: 'hull'; readonly points: readonly Vec3[]; readonly density?: number };
+  | { readonly kind: 'hull'; readonly points: readonly Vec3[]; readonly density?: number; readonly invisible?: boolean };
 
 export interface AnimalPalette {
   /** Main carved-wood colour. */

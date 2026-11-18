@@ -36,3 +36,28 @@ export function readDebugFlags(search = window.location.search): DebugFlags {
     .filter((x): x is SettledDice => x !== null);
   return { seed, fast: params.get('fast') === '1', forced };
 }
+
+/** Settings-menu debug options, remembered per browser. */
+export interface DebugSettings {
+  readonly enabled: boolean;
+  readonly showHitboxes: boolean;
+}
+
+const DEBUG_KEY = 'pass-the-wolf:debug';
+
+export function loadDebugSettings(): DebugSettings {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DEBUG_KEY) ?? '{}') as Partial<DebugSettings>;
+    return { enabled: raw.enabled === true, showHitboxes: raw.showHitboxes === true };
+  } catch {
+    return { enabled: false, showHitboxes: false };
+  }
+}
+
+export function saveDebugSettings(s: DebugSettings): void {
+  try {
+    localStorage.setItem(DEBUG_KEY, JSON.stringify(s));
+  } catch {
+    /* storage blocked: the setting lasts for this visit only */
+  }
+}
