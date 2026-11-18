@@ -1,4 +1,4 @@
-import '@fontsource/alfa-slab-one/400.css';
+import '@fontsource/dela-gothic-one/latin-400.css';
 import '@fontsource-variable/figtree/wght.css';
 import './ui/styles.css';
 import { GameController } from './game/controller';

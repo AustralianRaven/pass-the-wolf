@@ -71,7 +71,7 @@ export class GameController {
     if (this.setup) this.view.showSetup(this.setup);
   }
 
-  /** Put the current seat's dice at rest on their edge of the blanket. */
+  /** Put the current seat's dice at rest on their edge of the tray. */
   private prepareDice(): void {
     if (!this.state) return;
     const seat = this.state.seats[this.state.currentSeat]!;
@@ -335,7 +335,7 @@ export class GameController {
     let hint = '';
     if (this.phase === 'tumbling') hint = 'Tumbling…';
     else if (ready && awaiting && human) {
-      hint = this.state.turnPot > 0 ? 'Roll again, or bank what you have.' : 'Drag up on the blanket to throw, or hold Space.';
+      hint = this.state.turnPot > 0 ? 'Roll again, or bank what you have.' : 'Grab the wolves and fling them, or press Auto-roll.';
     } else if (ready && !human) hint = `${this.seat?.name} is thinking…`;
     this.view.update(this.state, {
       canRoll: human && ready && awaiting,

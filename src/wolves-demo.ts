@@ -7,7 +7,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { DIREWOLVES } from './animals/direwolves';
 import { createDirewolfMesh } from './render/direwolf-mesh';
 import { formatTrait, traitsFor } from './animals/traits';
-import { pineTexture, woolTexture } from './render/textures';
+import { carvedTexture, feltTexture } from './render/textures';
 
 /**
  * Model picker: the five direwolf candidates on turntables, side by side.
@@ -54,7 +54,7 @@ const rim = new THREE.DirectionalLight('#9fc0ff', 1.1);
 rim.position.set(5, 4, -6);
 scene.add(rim);
 
-const wool = woolTexture();
+const wool = feltTexture();
 wool.repeat.set(11, 6.5);
 const blanket = new THREE.Mesh(new THREE.PlaneGeometry(44, 26), new THREE.MeshStandardMaterial({ map: wool, roughness: 0.98 }));
 blanket.rotation.x = -Math.PI / 2;
@@ -62,7 +62,7 @@ blanket.receiveShadow = true;
 scene.add(blanket);
 
 const turntables: THREE.Group[] = [];
-const pine = pineTexture(5);
+const pine = carvedTexture(5);
 DIREWOLVES.forEach((design, i) => {
   const x = (i - 2) * SPACING;
   const plinth = new THREE.Mesh(

@@ -147,25 +147,26 @@ test.describe('Feature: keyboard play', () => {
 });
 
 test.describe('Feature: choosing wolves', () => {
-  test('Scenario: Given Kat picks Frostmane and Stalker, When she takes her turn, Then her plate shows that pair', async ({ page }) => {
+  test('Scenario: Given the setup sheet, When Kat opens the wolf picker, Then Winter Wolf is choosable and the next wolf is coming soon', async ({ page }) => {
     await open(page, []);
-    await page.getByText('Table', { exact: true }).click();
-    await page.getByLabel('Seat 1 name').fill('Kat');
-    await page.getByLabel('Seat 1 die 1').selectOption({ label: 'Frostmane' });
-    await expect(page.getByLabel('Seat 1 die 1'), 'Then die 1 is Frostmane').toHaveValue('frostmane');
-    await page.getByLabel('Seat 1 die 2').selectOption({ label: 'Stalker' });
-    await expect(page.getByLabel('Seat 1 die 2'), 'Then die 2 is Stalker').toHaveValue('stalker');
-    await page.getByRole('button', { name: 'Deal the wolves' }).click();
-    await takeWolves(page, 'Kat');
-    await expect(page.locator('.plate__dice'), 'Then the plate names the mixed pair').toHaveText('Frostmane + Stalker');
+    await page.getByRole('button', { name: /Seat 1 wolf/ }).click();
+    const den = page.getByRole('dialog', { name: /pick your wolf/ });
+    await expect(den, 'Then the wolf picker opens').toBeVisible();
+    await expect(den.getByRole('button', { name: 'Previous wolf' }), 'Then the first card has nothing before it').toBeDisabled();
+    await expect(den.getByRole('button', { name: 'Choose' }), 'Then Winter Wolf can be chosen').toBeEnabled();
+    await den.getByRole('button', { name: 'Next wolf' }).click();
+    await expect(den.locator('.wolfcard.is-focus'), 'Then the next card is the coming soon wolf').toContainText('Coming soon');
+    await expect(den.locator('.wolfcard.is-focus').getByRole('button', { name: 'Locked' }), 'Then the coming soon wolf is locked').toBeDisabled();
+    await den.getByRole('button', { name: 'Previous wolf' }).click();
+    await den.getByRole('button', { name: 'Choose' }).click();
+    await expect(den, 'Then choosing closes the picker').toBeHidden();
+    await expect(page.getByRole('button', { name: /Seat 1 wolf: Winter Wolf/ }), 'Then seat 1 throws the Winter Wolf').toBeVisible();
   });
 
-  test('Scenario: Given the setup sheet, When Kat opens Meet the pack, Then every wolf shows its strategy line', async ({ page }) => {
+  test('Scenario: Given two seats, When Kat picks Glacier for seat 1, Then seat 2 cannot take Glacier', async ({ page }) => {
     await open(page, []);
-    await page.getByText('Meet the pack: how each wolf tumbles').click();
-    for (const name of ['Warden', 'Stalker', 'Frostmane', 'Timber Runner', 'Old Grizzle']) {
-      await expect(page.locator('.pack__name', { hasText: name }), `Then ${name} is listed`).toBeVisible();
-    }
-    await expect(page.locator('.pack__traits').nth(2), 'Then Frostmane shows its Howl edge').toContainText('Howl');
+    await page.getByRole('radiogroup', { name: 'Seat 1 collar colour' }).getByRole('radio', { name: 'Glacier' }).check();
+    await expect(page.getByRole('radiogroup', { name: 'Seat 1 collar colour' }).getByRole('radio', { name: 'Glacier' }), 'Then seat 1 wears Glacier').toBeChecked();
+    await expect(page.getByRole('radiogroup', { name: 'Seat 2 collar colour' }).getByRole('radio', { name: 'Glacier' }), 'Then Glacier is taken for seat 2').toBeDisabled();
   });
 });

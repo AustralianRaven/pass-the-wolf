@@ -4,7 +4,7 @@ import { ARENA, type DiceWorld } from '../physics/dice-world';
 import { DIREWOLVES } from '../animals/direwolves';
 import { createDieMesh, setCollarColour } from './die-mesh';
 import { createDirewolfMesh, requestDirewolfGeometry } from './direwolf-mesh';
-import { pineTexture, woolTexture } from './textures';
+import { carvedTexture, feltTexture } from './textures';
 
 /** In-game detail: the dice are small on screen, so a coarser sculpt builds faster. */
 export const GAME_STEP = 0.014;
@@ -23,7 +23,7 @@ export function prewarmDirewolves(): void {
   for (const d of DIREWOLVES) void requestDirewolfGeometry(d, GAME_STEP);
 }
 
-/** Three.js view of the table: wool blanket, pine tray, two carved dice, warm lamp light. */
+/** Three.js view of the table: violet felt tray, carved rim, two wolves, cold moonlight. */
 export class TableScene {
   readonly renderer: THREE.WebGLRenderer;
   readonly camera: THREE.PerspectiveCamera;
@@ -40,7 +40,7 @@ export class TableScene {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
-    this.scene.background = new THREE.Color('#14100d');
+    this.scene.background = new THREE.Color('#120c22');
 
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.5, 200);
     this.camera.position.set(0, 12.5, 9.6);
@@ -58,8 +58,8 @@ export class TableScene {
   }
 
   private buildLights(): void {
-    this.scene.add(new THREE.HemisphereLight('#ffe2bf', '#2a1610', 0.55));
-    const lamp = new THREE.DirectionalLight('#ffd7a3', 2.6);
+    this.scene.add(new THREE.HemisphereLight('#cdbff5', '#1a1030', 0.6));
+    const lamp = new THREE.DirectionalLight('#eadcff', 2.2);
     lamp.position.set(-6, 18, 6);
     lamp.castShadow = true;
     lamp.shadow.mapSize.set(2048, 2048);
@@ -71,24 +71,23 @@ export class TableScene {
     lamp.shadow.bias = -0.0005;
     lamp.shadow.radius = 4;
     this.scene.add(lamp);
-    const fill = new THREE.PointLight('#ff9a5a', 18, 40, 1.6);
+    const fill = new THREE.PointLight('#9b7ae0', 22, 40, 1.6);
     fill.position.set(8, 6, -6);
     this.scene.add(fill);
   }
 
   private buildTable(): void {
-    const wool = woolTexture();
-    wool.repeat.set(ARENA.halfX / 2, ARENA.halfZ / 2);
+    const felt = feltTexture();
+    felt.repeat.set(ARENA.halfX / 2, ARENA.halfZ / 2);
     const blanket = new THREE.Mesh(
       new THREE.PlaneGeometry(ARENA.halfX * 2, ARENA.halfZ * 2),
-      new THREE.MeshStandardMaterial({ map: wool, roughness: 0.98, metalness: 0 }),
+      new THREE.MeshStandardMaterial({ map: felt, roughness: 0.98, metalness: 0 }),
     );
     blanket.rotation.x = -Math.PI / 2;
     blanket.receiveShadow = true;
     this.scene.add(blanket);
 
-    const pine = pineTexture();
-    const rimMaterial = new THREE.MeshStandardMaterial({ map: pine, roughness: 0.55, color: '#d9a466' });
+    const rimMaterial = new THREE.MeshStandardMaterial({ map: carvedTexture(), roughness: 0.6, color: '#b9a8e6' });
     const rimHeight = 0.9;
     const t = 0.6;
     const rims: Array<[number, number, number, number]> = [
@@ -105,11 +104,11 @@ export class TableScene {
       this.scene.add(rim);
     }
 
-    const tableTexture = pineTexture(11);
+    const tableTexture = carvedTexture(11, '#160f2b', 'rgba(170, 150, 230, 0.10)');
     tableTexture.repeat.set(3, 3);
     const table = new THREE.Mesh(
       new THREE.PlaneGeometry(80, 60),
-      new THREE.MeshStandardMaterial({ map: tableTexture, color: '#7a5233', roughness: 0.7 }),
+      new THREE.MeshStandardMaterial({ map: tableTexture, color: '#ffffff', roughness: 0.8 }),
     );
     table.rotation.x = -Math.PI / 2;
     table.position.y = -0.02;
