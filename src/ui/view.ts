@@ -10,6 +10,7 @@ import type { DebugSettings } from '../game/debug';
 import { renderPortrait, type PortraitScene } from '../render/portrait';
 import { playCutscene } from './cutscene';
 import { playWinnerCutscene } from './winner-cutscene';
+import { BUILD } from '../version';
 import type { Contender } from '../render/winner-scene';
 
 /** Tiny element helper: text always goes through textContent, so names can't inject markup. */
@@ -140,7 +141,7 @@ export class GameView {
   private setup!: Setup;
   private seatColours: string[] = [];
   private readonly settingsDialog: HTMLDialogElement;
-  private debug: DebugSettings = { enabled: false, showHitboxes: false };
+  private debug: DebugSettings = { enabled: false, showHitboxes: false, diagnostics: false };
 
   constructor(
     mount: HTMLElement,
@@ -292,8 +293,10 @@ export class GameView {
           toggle('Debug mode', 'Unlocks the tools below.', this.debug.enabled, false, (on) => this.changeDebug({ ...this.debug, enabled: on })),
           el('div', { class: 'settings__sub' }, [
             toggle('Show hitboxes', 'Draw the real physics shapes the wolves roll on. Gold parts are the hidden pig belly and pads.', this.debug.enabled && this.debug.showHitboxes, !this.debug.enabled, (on) => this.changeDebug({ ...this.debug, showHitboxes: on })),
+            toggle('Dice diagnostics', 'Show each animal’s inner state on screen. Screenshot it if an animal ever looks wrong.', this.debug.enabled && this.debug.diagnostics, !this.debug.enabled, (on) => this.changeDebug({ ...this.debug, diagnostics: on })),
           ]),
         ]),
+        el('p', { class: 'settings__version', text: `Version ${BUILD}` }),
       );
     };
     this.renderSettings();

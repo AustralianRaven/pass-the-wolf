@@ -6,6 +6,7 @@ import { createDieMesh, createHitboxMesh, setCollarColour } from './die-mesh';
 import { createWolfMesh, requestWolfGeometry } from './wolf-mesh';
 import { carvedTexture, feltTexture } from './textures';
 import type { Wobble } from './wobble';
+import type { WolfHealth } from './wolf-mesh';
 
 /** In-game detail: the dice are small on screen, so a coarser sculpt builds faster. */
 export const GAME_STEP = 0.014;
@@ -73,6 +74,9 @@ export class TableScene {
   private readonly scene = new THREE.Scene();
   private dieMeshes: THREE.Group[] = [];
   private wobbleOn = true;
+  /** Times a broken animal body was repaired (shown in the dice diagnostics). */
+  private heals = 0;
+  private lastHealth: (WolfHealth | null)[] = [];
   private lastRender = 0;
   private hitboxMeshes: THREE.Group[] = [];
   private showHitboxes = false;
@@ -266,7 +270,27 @@ export class TableScene {
     return this.dieMeshes.map((g) => g.getObjectByName('model')?.userData.wobble as Wobble | undefined).filter((w): w is Wobble => !!w);
   }
 
+  /** One line per animal on the table, for Settings → Debug → Dice diagnostics. */
+  diagnostics(): string[] {
+    return this.dieMeshes.map((g, i) => {
+      const h = this.lastHealth[i];
+      const p = g.position;
+      const w = g.getObjectByName('model')?.userData.wobble as Wobble | undefined;
+      return `die ${i}: at ${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)} · verts ${h?.verts ?? '?'} · bones ${h ? (h.bonesOk ? 'ok' : 'BAD') : '?'} · rig ${w ? 'on' : 'off'}${h?.healed ? ` · healed ${h.healed}` : ''}`;
+    }).concat(`repairs so far: ${this.heals}`);
+  }
+
   render(): void {
+    // Repair any animal body that has gone missing or bad before drawing it.
+    this.lastHealth = this.dieMeshes.map((g) => {
+      const check = g.getObjectByName('model')?.userData.check as (() => WolfHealth) | undefined;
+      const h = check?.() ?? null;
+      if (h?.healed) {
+        this.heals++;
+        console.warn('Pass the Wolf: repaired an animal body', h);
+      }
+      return h;
+    });
     const now = performance.now();
     const dt = this.lastRender ? Math.min(0.05, (now - this.lastRender) / 1000) : 0;
     this.lastRender = now;

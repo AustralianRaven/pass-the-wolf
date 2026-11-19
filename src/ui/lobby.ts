@@ -132,6 +132,7 @@ export function openLobby(root: HTMLElement, defaults: LobbyDefaults, onStart: L
     ways.querySelectorAll('input').forEach((i) => (i.disabled = true));
     hostFoot.hidden = !s.isHost;
     s.onRoster = renderRoster;
+    s.onMismatch = (name, theirs) => say(`${name} tried to join on a different version (${theirs}). They need to refresh with Ctrl+Shift+R.`);
     s.onClosed = (reason) => say(reason);
     s.onStart = (info, replay) => {
       dialog.close();

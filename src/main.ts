@@ -7,6 +7,7 @@ import { loadDebugSettings, readDebugFlags, saveDebugSettings } from './game/deb
 import { loadSetup } from './game/settings';
 import { loadFloppy, saveFloppy } from './game/motion';
 import { openLobby } from './ui/lobby';
+import { BUILD } from './version';
 import { loadRapier } from './physics/dice-world';
 import { prewarmWolves, TableScene } from './render/scene';
 import { GameView } from './ui/view';
@@ -16,12 +17,27 @@ async function boot(): Promise<void> {
   if (!mount) throw new Error('Missing #app root');
 
   let controller: GameController | null = null;
+  let diagTimer = 0;
+  /** Settings → Debug → Dice diagnostics: a live readout of each animal, a few times a second. */
+  function showDiagnostics(on: boolean): void {
+    window.clearInterval(diagTimer);
+    document.querySelector('.diag')?.remove();
+    if (!on) return;
+    const pre = document.createElement('pre');
+    pre.className = 'diag';
+    pre.setAttribute('aria-hidden', 'true');
+    document.querySelector('.table')?.append(pre);
+    diagTimer = window.setInterval(() => {
+      pre.textContent = [`Pass the Wolf ${BUILD}`, controller?.debugState() ?? '', ...(scene?.diagnostics() ?? [])].join('\n');
+    }, 250);
+  }
   let scene: TableScene | null = null;
   const debug = loadDebugSettings();
   const view = new GameView(mount, {
     onDebugChange: (s) => {
       saveDebugSettings(s);
       scene?.setShowHitboxes(s.enabled && s.showHitboxes);
+      showDiagnostics(s.enabled && s.diagnostics);
     },
     onFloppyChange: (on) => {
       saveFloppy(on);
@@ -61,6 +77,7 @@ async function boot(): Promise<void> {
       room,
     );
   }
+  showDiagnostics(debug.enabled && debug.diagnostics);
   const room = new URLSearchParams(location.search).get('room');
   if (room) openFriends(room);
   prewarmWolves();

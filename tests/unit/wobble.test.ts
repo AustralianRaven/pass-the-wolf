@@ -24,3 +24,16 @@ describe('Feature: the floppy rig survives bad frames', () => {
     expect(finite(w), 'Then the bones are still real numbers').toBe(true);
   });
 });
+
+describe('Feature: an animal body repairs itself', () => {
+  it('Scenario: Given a carved, floppy animal whose bones have gone bad, When the scene checks it, Then the rig is straightened and the body is whole', async () => {
+    const { createWolfMesh } = await import('../../src/render/wolf-mesh');
+    const group = createWolfMesh(WINTER_WOLF_DESIGN, { step: 0.035, collar: '#a58bd6', wobble: true });
+    const wobble = group.userData.wobble as Wobble;
+    wobble.bones[3]!.quaternion.set(NaN, 0, 0, 1);
+    const health = (group.userData.check as () => { verts: number; bonesOk: boolean; healed: string })();
+    expect(health.healed, 'Then the bad bones are repaired').toContain('bones');
+    expect(finite(wobble), 'Then every bone is a real number again').toBe(true);
+    expect(health.verts, 'Then the carved body is there').toBeGreaterThan(300);
+  });
+});

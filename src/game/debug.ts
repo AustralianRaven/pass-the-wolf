@@ -43,6 +43,8 @@ export function readDebugFlags(search = window.location.search): DebugFlags {
 export interface DebugSettings {
   readonly enabled: boolean;
   readonly showHitboxes: boolean;
+  /** An on-screen readout of each animal's state, for reporting rendering bugs. */
+  readonly diagnostics: boolean;
 }
 
 const DEBUG_KEY = 'pass-the-wolf:debug';
@@ -50,9 +52,9 @@ const DEBUG_KEY = 'pass-the-wolf:debug';
 export function loadDebugSettings(): DebugSettings {
   try {
     const raw = JSON.parse(localStorage.getItem(DEBUG_KEY) ?? '{}') as Partial<DebugSettings>;
-    return { enabled: raw.enabled === true, showHitboxes: raw.showHitboxes === true };
+    return { enabled: raw.enabled === true, showHitboxes: raw.showHitboxes === true, diagnostics: raw.diagnostics === true };
   } catch {
-    return { enabled: false, showHitboxes: false };
+    return { enabled: false, showHitboxes: false, diagnostics: false };
   }
 }
 
