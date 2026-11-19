@@ -492,7 +492,7 @@ export class GameController {
 
   /** Pose both dice on one recorded frame (14 numbers: position and rotation of each die). */
   private poseFrame(frames: Int16Array, i: number): void {
-    if (!this.world) return;
+    if (!this.world || i < 0 || (i + 1) * 14 > frames.length) return;
     for (const d of [0, 1] as const) {
       const o = i * 14 + d * 7;
       const q = { x: frames[o + 3]! / 32767, y: frames[o + 4]! / 32767, z: frames[o + 5]! / 32767, w: frames[o + 6]! / 32767 };
@@ -546,7 +546,9 @@ export class GameController {
     }
     if (this.phase === 'replaying' && this.replay) {
       const count = this.replay.frames.length / 14;
-      const i = Math.min(count - 1, Math.floor(((now - this.replay.start) / 1000) * (1 / (TIMESTEP * TRACK_EVERY))));
+      // A frame's timestamp can be a moment before the replay was queued: never read frame -1.
+      const elapsed = Math.max(0, now - this.replay.start) / 1000;
+      const i = Math.min(count - 1, Math.floor(elapsed / (TIMESTEP * TRACK_EVERY)));
       if (count > 0) this.poseFrame(this.replay.frames, i);
       if (i >= count - 1) {
         const settled = this.replay.settled;

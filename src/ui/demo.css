@@ -78,3 +78,63 @@
   bottom: 2rem;
   transform: translateX(-50%);
 }
+
+/* Win screens page: the same carved panel, with the cutscene filling the rest. */
+.wins-page {
+  background: radial-gradient(ellipse at 60% 40%, var(--paper-2), var(--night));
+}
+.wins {
+  width: 21rem;
+  z-index: 9;
+}
+.wins__stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-left: 23rem;
+}
+.wins__hint {
+  color: var(--ink-dim);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.6rem;
+}
+.wins__seats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.wins__seat {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--paper-2);
+  border-bottom: 2px solid var(--ink-faint);
+}
+.wins__line {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.wins__line .lobby__input {
+  min-width: 0;
+  flex: 1;
+}
+.wins__won {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+.wins__play {
+  margin-top: 0.6rem;
+}
+/* While a scene plays, the panel steps back like the game HUD does. */
+.is-cutscene .wins {
+  opacity: 0;
+  pointer-events: none;
+}
