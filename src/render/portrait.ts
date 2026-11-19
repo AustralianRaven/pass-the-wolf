@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { AnimalDefinition } from '../animals/body';
-import { WOLF_DESIGNS } from '../animals/wolf-design';
+import { DESIGNS as WOLF_DESIGNS } from '../animals/designs';
 import type { GenericPose } from '../rules/poses';
 import { GAME_STEP } from './scene';
 import { createWolfMesh, requestWolfGeometry } from './wolf-mesh';

@@ -2,12 +2,15 @@ import type { GameState, TurnRecord } from '../rules/game';
 import { buildScoreCard } from '../rules/scorecard';
 import type { RollResult } from '../rules/scoring';
 import { SEAT_COLOURS, TARGET_CHOICES, cpuDice, type Setup } from '../game/settings';
-import { DEFAULT_DIE, PICKABLE } from '../animals/registry';
+import { DEFAULT_DIE, PICKABLE, getAnimal, isPickable } from '../animals/registry';
+import { designFor } from '../animals/designs';
 import { DEN_POINTS, DOUBLE_MULTIPLIER, MAX_SEATS, MIN_SEATS } from '../rules/constants';
 import { SCORING_POSES } from '../rules/poses';
 import type { DebugSettings } from '../game/debug';
 import { renderPortrait, type PortraitScene } from '../render/portrait';
 import { playCutscene } from './cutscene';
+import { playWinnerCutscene } from './winner-cutscene';
+import type { Contender } from '../render/winner-scene';
 
 /** Tiny element helper: text always goes through textContent, so names can't inject markup. */
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -39,7 +42,7 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string,
 }
 
 /** Names for the seat colours, used in labels and for screen readers. */
-const COLOUR_NAMES: Record<string, string> = {
+export const COLOUR_NAMES: Record<string, string> = {
   '#a58bd6': 'Lilac',
   '#e07a3a': 'Ember',
   '#5b9bd5': 'Glacier',
@@ -48,7 +51,7 @@ const COLOUR_NAMES: Record<string, string> = {
   '#efe7da': 'Snow',
 };
 
-/** The wolves a player can choose. Only the winter wolf is carved so far. */
+/** The animals a player can choose: every carved animal, then one card for what's next. */
 interface WolfChoice {
   id: string;
   name: string;
@@ -56,13 +59,13 @@ interface WolfChoice {
   available: boolean;
 }
 const WOLF_CHOICES: readonly WolfChoice[] = [
-  { id: 'winter', name: 'Winter Wolf', blurb: 'Pale coat, thick ruff, steady on its feet.', available: true },
-  { id: 'soon-1', name: 'Coming soon', blurb: 'Still being carved.', available: false },
-  { id: 'soon-2', name: 'Coming soon', blurb: 'Still being carved.', available: false },
-  { id: 'soon-3', name: 'Coming soon', blurb: 'Still being carved.', available: false },
+  ...PICKABLE.map((a) => ({ id: a.scoring.id, name: a.scoring.name, blurb: designFor(a.scoring.id)?.blurb ?? a.pitch ?? '', available: true })),
+  { id: 'soon', name: 'Coming soon', blurb: 'More animals are being carved.', available: false },
 ];
-/** Until the winter wolf model lands, the winter wolf throws the default die. */
+/** A fresh human seat throws a pair of the default animal (the winter wolf). */
 const WINTER_DICE: [string, string] = [DEFAULT_DIE, DEFAULT_DIE];
+/** The name of the animal a seat throws. */
+const animalName = (id: string) => (isPickable(id) ? getAnimal(id).scoring.name : 'Winter Wolf');
 
 /** A carved block of fixed digit places; a new value swaps the block, it never fades. */
 function setDigits(node: HTMLElement, value: number, places = 3): void {
@@ -97,6 +100,8 @@ export interface ViewHandlers {
   onBank(): void;
   onTakeTurn(): void;
   onNewGame(): void;
+  /** Open the "Play with friends" lobby (#2). */
+  onOnline(): void;
   onRematch(): void;
   onDebugChange(settings: DebugSettings): void;
   onFloppyChange(on: boolean): void;
@@ -303,9 +308,14 @@ export class GameView {
 
   // ---------- Setup ----------
 
+  /** The setup as it stands, for the lobby's defaults. */
+  get currentSetup(): Setup {
+    return this.setup;
+  }
+
   showSetup(setup: Setup): void {
     this.setup = structuredClone(setup);
-    for (const seat of this.setup.seats) if (seat.kind === 'human') seat.dice = [...WINTER_DICE];
+    for (const seat of this.setup.seats) if (seat.kind === 'human' && !isPickable(seat.dice[0])) seat.dice = [...WINTER_DICE];
     this.hud.hidden = true;
     this.handover.hidden = true;
     this.setupSheet.hidden = false;
@@ -372,8 +382,8 @@ export class GameView {
 
       const wolf = el('button', {
         class: 'seat__wolf',
-        attrs: { type: 'button', 'aria-label': `Seat ${i + 1} wolf: Winter Wolf. Choose wolf.` },
-      }, [this.wolfMark(seat.colour), el('span', { text: seat.kind === 'cpu' ? 'Computer wolf' : 'Winter Wolf' })]);
+        attrs: { type: 'button', 'aria-label': `Seat ${i + 1} animal: ${animalName(seat.dice[0])}. Choose animal.` },
+      }, [this.wolfMark(seat.colour), el('span', { text: seat.kind === 'cpu' ? 'Computer wolf' : animalName(seat.dice[0]) })]);
       wolf.disabled = seat.kind === 'cpu';
       wolf.addEventListener('click', () => this.openDen(i));
 
@@ -426,12 +436,15 @@ export class GameView {
     });
 
     const start = el('button', { class: 'tab tab--roll setup__start', text: 'Deal the wolves', attrs: { type: 'submit' } });
+    const online = el('button', { class: 'tab tab--quiet setup__online', text: 'Play with friends', attrs: { type: 'button' } });
+    online.addEventListener('click', () => this.handlers.onOnline());
 
     form.append(
       el('header', { class: 'setup__head' }, [title, lede]),
       modeGroup,
       el('div', { class: 'setup__seats' }, [el('h2', { class: 'setup__h', text: 'The pack' }), seatList, add]),
       el('div', { class: 'setup__foot' }, [el('label', { class: 'setup__target-label', text: 'Race to the cave', attrs: { for: 'target' } }), target, start]),
+      el('div', { class: 'setup__friends' }, [el('span', { class: 'setup__or', text: 'Not sharing one screen?' }), online]),
     );
     this.setupSheet.replaceChildren(form);
   }
@@ -463,8 +476,8 @@ export class GameView {
   // ---------- The den: pick your wolf ----------
 
   private buildDen(): HTMLDialogElement {
-    const prev = el('button', { class: 'den__arrow', attrs: { type: 'button', 'aria-label': 'Previous wolf' } }, [this.arrow(-1)]);
-    const next = el('button', { class: 'den__arrow', attrs: { type: 'button', 'aria-label': 'Next wolf' } }, [this.arrow(1)]);
+    const prev = el('button', { class: 'den__arrow', attrs: { type: 'button', 'aria-label': 'Previous animal' } }, [this.arrow(-1)]);
+    const next = el('button', { class: 'den__arrow', attrs: { type: 'button', 'aria-label': 'Next animal' } }, [this.arrow(1)]);
     prev.addEventListener('click', () => this.moveDen(-1));
     next.addEventListener('click', () => this.moveDen(1));
     const close = el('button', { class: 'tab tab--quiet', text: 'Close', attrs: { type: 'button' } });
@@ -479,6 +492,12 @@ export class GameView {
     });
     // Drag or swipe: the track scrolls natively with snap points; keep the index in step.
     viewport.addEventListener('scrollend', () => {
+      // A scroll the arrows started already set the index. Near the ends a card cannot reach the
+      // centre, so re-reading "nearest to centre" would bounce the last card back one.
+      if (this.denScrolling) {
+        this.denScrolling = false;
+        return;
+      }
       const mid = viewport.getBoundingClientRect().left + viewport.clientWidth / 2;
       const cards = [...this.denTrack.children] as HTMLElement[];
       let best = this.denIndex;
@@ -494,7 +513,7 @@ export class GameView {
     const dialog = el('dialog', { class: 'den block', attrs: { 'aria-labelledby': 'den-title' } }, [
       el('header', { class: 'sheet__head' }, [this.denTitle, close]),
       el('div', { class: 'den__stage' }, [prev, viewport, next]),
-      el('p', { class: 'den__note', text: 'You throw a matching pair of whichever wolf you pick.' }),
+      el('p', { class: 'den__note', text: 'You throw a matching pair of whichever animal you pick. They all roll the same odds.' }),
     ]);
     dialog.addEventListener('click', (e) => {
       if (e.target === dialog) dialog.close();
@@ -511,14 +530,14 @@ export class GameView {
   private openDen(seatIndex: number): void {
     this.denSeat = seatIndex;
     const seat = this.setup.seats[seatIndex]!;
-    this.denTitle.textContent = `${seat.name.trim() || `Seat ${seatIndex + 1}`}: pick your wolf`;
+    this.denTitle.textContent = `${seat.name.trim() || `Seat ${seatIndex + 1}`}: pick your animal`;
     this.denTrack.replaceChildren(
       ...WOLF_CHOICES.map((w, i) => {
         const card = el('li', { class: `wolfcard${w.available ? '' : ' is-locked'}`, attrs: { 'aria-roledescription': 'slide', 'aria-label': `${i + 1} of ${WOLF_CHOICES.length}: ${w.name}` } });
         card.style.setProperty('--seat', seat.colour);
         const art = el('div', { class: 'wolfcard__art', attrs: { 'aria-hidden': 'true' } }, [this.wolfMark(w.available ? seat.colour : 'transparent')]);
         if (w.available) {
-          const animal = PICKABLE.find((a) => a.scoring.id === DEFAULT_DIE) ?? PICKABLE[0]!;
+          const animal = getAnimal(w.id);
           void renderPortrait(animal, seat.colour, { kind: 'single', pose: 'upright' }).then((url) => {
             art.replaceChildren(el('img', { class: 'wolfcard__render', attrs: { src: url, alt: '' } }));
           });
@@ -526,7 +545,7 @@ export class GameView {
         const pick = el('button', { class: 'tab tab--roll wolfcard__pick', text: w.available ? 'Choose' : 'Locked', attrs: { type: 'button' } });
         pick.disabled = !w.available;
         pick.addEventListener('click', () => {
-          seat.dice = [...WINTER_DICE];
+          seat.dice = [w.id, w.id];
           this.den.close();
           this.renderSetup();
         });
@@ -542,11 +561,15 @@ export class GameView {
     this.setDenIndex(this.denIndex + dir, true);
   }
 
+  /** The arrows (not a drag) started the current carousel scroll. */
+  private denScrolling = false;
+
   private setDenIndex(i: number, scroll: boolean): void {
     const n = WOLF_CHOICES.length;
     this.denIndex = Math.max(0, Math.min(n - 1, i));
     const cards = [...this.denTrack.children] as HTMLElement[];
     cards.forEach((c, j) => c.classList.toggle('is-focus', j === this.denIndex));
+    if (scroll) this.denScrolling = true;
     if (scroll) cards[this.denIndex]?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
     const arrows = this.den.querySelectorAll<HTMLButtonElement>('.den__arrow');
     arrows[0]!.disabled = this.denIndex === 0;
@@ -706,17 +729,24 @@ export class GameView {
     return playCutscene(this.root, roll, ms, (t) => this.announce(t));
   }
 
+  /** The storm, the cave and the tornado (#5), before the final score band. */
+  playWinnerCutscene(winner: Contender, losers: readonly Contender[]): Promise<void> {
+    return playWinnerCutscene(this.root, winner, losers, (t) => this.announce(t));
+  }
+
   // ---------- Handover ----------
 
   showHandover(
     state: GameState,
-    opts: { nextSeat: number; summary: string; buttonText: string; gameOver?: boolean },
+    opts: { nextSeat: number; summary: string; buttonText: string; gameOver?: boolean; locked?: boolean },
   ): void {
     const next = state.seats[opts.nextSeat]!;
     this.root.style.setProperty('--handover', this.colourOf(opts.nextSeat));
     this.handoverSummary.textContent = opts.summary;
     this.handoverName.textContent = opts.gameOver ? winsLine(next.name) : turnLine(next.name);
     this.handoverButton.textContent = opts.buttonText;
+    // Online, only the player whose turn it is can take the wolves.
+    this.handoverButton.disabled = !!opts.locked;
     this.handoverExtra.replaceChildren();
     if (opts.gameOver) {
       const again = el('button', { class: 'tab tab--quiet', text: 'New game', attrs: { type: 'button' } });
@@ -763,10 +793,11 @@ export class GameView {
 
   /** Every result and what it scores, laid out as a sheet of tiles. */
   private poseTiles(): HTMLElement {
-    const scoring = PICKABLE.find((a) => a.scoring.id === DEFAULT_DIE)?.scoring ?? PICKABLE[0]!.scoring;
     const tiles = el('ul', { class: 'tiles' });
-    // Every tile carries a real render of the wolf in that pose, in the current seat's collar.
-    const animal = PICKABLE.find((a) => a.scoring.id === DEFAULT_DIE) ?? PICKABLE[0]!;
+    // Every tile carries a real render of the current player's animal in that pose, in their colour.
+    const seatDie = this.lastState?.seats[this.lastState.currentSeat]?.dice[0];
+    const animal = seatDie && isPickable(seatDie) ? getAnimal(seatDie) : getAnimal(DEFAULT_DIE);
+    const scoring = animal.scoring;
     const collar = this.lastState ? this.colourOf(this.lastState.currentSeat) : SEAT_COLOURS[0];
     const tile = (name: string, single: string, double: string | null, shot: PortraitScene, tone = '') => {
       const img = el('img', { class: 'tile__art', attrs: { alt: `${name}: how the wolves land`, width: '360', height: '220' } });
@@ -838,7 +869,7 @@ export class GameView {
     if (turn.outcome === 'banked') {
       return el('td', { class: 'card__cell', attrs: { title: rolls } }, [el('span', { class: 'card__pts', text: `+${turn.banked}` })]);
     }
-    const label = turn.outcome === 'tangled' ? 'Tangled' : 'Scattered';
+    const label = turn.outcome === 'tangled' ? 'Tangled' : turn.outcome === 'skipped' ? 'Away' : 'Scattered';
     return el('td', { class: `card__cell is-bust is-${turn.outcome}`, attrs: { title: rolls } }, [
       el('span', { class: 'card__bust', text: label }),
       el('span', { class: 'card__lost', text: turn.lost > 0 ? `-${turn.lost}` : '0' }),

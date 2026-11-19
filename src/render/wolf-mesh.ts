@@ -131,7 +131,13 @@ export function createWolfMesh(design: WolfDesign, opts: WolfMeshOptions = {}): 
   }
   // Eyes are set into the face, not stuck on it: small, flattened against the skull and pushed
   // half their depth into the fur, with a soft ice-blue glint.
-  const eyeMaterial = new THREE.MeshStandardMaterial({ color: '#9fd3f2', emissive: '#3a7fb0', emissiveIntensity: 0.35, roughness: 0.2 });
+  const iced = !design.eyeColour;
+  const eyeMaterial = new THREE.MeshStandardMaterial({
+    color: design.eyeColour ?? '#9fd3f2',
+    emissive: iced ? '#3a7fb0' : '#000000',
+    emissiveIntensity: iced ? 0.35 : 0,
+    roughness: 0.2,
+  });
   const pupilMaterial = new THREE.MeshBasicMaterial({ color: '#0d0a08' });
   for (const e of design.eyes) {
     const side = Math.sign(e[2]);
@@ -144,12 +150,14 @@ export function createWolfMesh(design: WolfDesign, opts: WolfMeshOptions = {}): 
     group.add(eye);
   }
 
-  if (opts.collar) {
+  if (opts.collar && design.marker?.kind === 'bowtie') {
+    group.add(createBowTie(opts.collar, design.marker.at, design.marker.size ?? 0.05));
+  } else if (opts.collar) {
     const [a, b] = design.neck;
     const at = new THREE.Vector3(a[0] + (b[0] - a[0]) * 0.55, a[1] + (b[1] - a[1]) * 0.55, 0);
     const dir = new THREE.Vector3(b[0] - a[0], b[1] - a[1], 0).normalize();
     const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.128, 0.032, 10, 32),
+      new THREE.TorusGeometry(design.marker?.kind === 'collar' ? (design.marker.radius ?? 0.128) : 0.128, 0.032, 10, 32),
       new THREE.MeshStandardMaterial({ color: opts.collar, roughness: 0.35, emissive: opts.collar, emissiveIntensity: 0.25 }),
     );
     collar.name = 'collar';
@@ -159,4 +167,23 @@ export function createWolfMesh(design: WolfDesign, opts: WolfMeshOptions = {}): 
     group.add(collar);
   }
   return group;
+}
+
+/** A bow tie in the player's colour, facing forward (+X) at the throat. Named 'collar' so recolouring finds it. */
+function createBowTie(colour: string, at: readonly [number, number, number], size: number): THREE.Group {
+  const material = new THREE.MeshStandardMaterial({ color: colour, roughness: 0.35, emissive: colour, emissiveIntensity: 0.25 });
+  const tie = new THREE.Group();
+  tie.name = 'collar';
+  for (const side of [1, -1]) {
+    // Each wing is a flattened cone, its point at the knot, flaring out to the side.
+    const wing = new THREE.Mesh(new THREE.ConeGeometry(size * 0.75, size * 1.5, 4), material);
+    wing.rotation.x = side * (Math.PI / 2);
+    wing.position.set(0, 0, side * size * 0.75);
+    wing.scale.set(1, 1, 0.45);
+    tie.add(wing);
+  }
+  const knot = new THREE.Mesh(new THREE.SphereGeometry(size * 0.38, 12, 8), material);
+  tie.add(knot);
+  tie.position.set(...at);
+  return tie;
 }

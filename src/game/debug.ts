@@ -12,6 +12,8 @@ export interface DebugFlags {
   readonly seed: number | null;
   readonly fast: boolean;
   readonly forced: SettledDice[];
+  /** `?winner=1`: play the winner cutscene even in fast mode (for its e2e test). */
+  readonly winnerScene: boolean;
 }
 
 function parseForced(entry: string): SettledDice | null {
@@ -34,7 +36,7 @@ export function readDebugFlags(search = window.location.search): DebugFlags {
     .filter(Boolean)
     .map(parseForced)
     .filter((x): x is SettledDice => x !== null);
-  return { seed, fast: params.get('fast') === '1', forced };
+  return { seed, fast: params.get('fast') === '1', forced, winnerScene: params.get('winner') === '1' };
 }
 
 /** Settings-menu debug options, remembered per browser. */
