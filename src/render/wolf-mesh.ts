@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { WolfDesign } from '../animals/wolf-design';
 import { sculptWolfArrays, type WolfArrays } from '../sculpt/paint-wolf';
+import { Wobble, skinWolfGeometry } from './wobble';
 
 export interface WolfMeshOptions {
   /** Grid step: smaller is more detailed and slower. */
@@ -11,6 +12,8 @@ export interface WolfMeshOptions {
   readonly async?: boolean;
   /** Shown until the carved body arrives (async only). */
   readonly placeholder?: THREE.Object3D;
+  /** Rig the tail, ears and legs to flop (render only). The group's userData.wobble drives it. */
+  readonly wobble?: boolean;
 }
 
 const geometryCache = new Map<string, THREE.BufferGeometry>();
@@ -30,6 +33,17 @@ function pump(): void {
 }
 
 const keyOf = (design: WolfDesign, step: number) => `${design.id}@${step}`;
+
+/** A body with no vertices yet, but every attribute a skinned mesh reads, until the carving lands. */
+function emptyGeometry(): THREE.BufferGeometry {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute([], 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute([], 3));
+  g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute([], 4));
+  g.setAttribute('skinWeight', new THREE.Float32BufferAttribute([], 4));
+  return g;
+}
 
 function toGeometry(a: WolfArrays): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();
@@ -91,15 +105,26 @@ export function createWolfMesh(design: WolfDesign, opts: WolfMeshOptions = {}): 
   const w = design.width;
   const key = keyOf(design, step);
   const ready = geometryCache.get(key);
-  const geometry = ready ?? (opts.async ? new THREE.BufferGeometry() : wolfGeometry(design, step));
-  const body = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 }));
+  const geometry = ready ?? (opts.async ? emptyGeometry() : wolfGeometry(design, step));
+  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 });
+  const wobble = opts.wobble ? new Wobble(design) : null;
+  if (wobble) skinWolfGeometry(geometry, design);
+  const body = wobble ? new THREE.SkinnedMesh(geometry, material) : new THREE.Mesh(geometry, material);
+  if (body instanceof THREE.SkinnedMesh && wobble) {
+    body.add(wobble.root);
+    body.bind(new THREE.Skeleton(wobble.bones));
+    // Skinned vertices move outside the rest bounds; don't let culling clip a flopping tail.
+    body.frustumCulled = false;
+  }
   body.castShadow = true;
   body.receiveShadow = true;
   const group = new THREE.Group();
   group.add(body);
+  if (wobble) group.userData.wobble = wobble;
   if (opts.async && !ready) {
     if (opts.placeholder) group.add(opts.placeholder);
     void requestWolfGeometry(design, step, true).then((g) => {
+      if (wobble) skinWolfGeometry(g, design);
       body.geometry = g;
       if (opts.placeholder) group.remove(opts.placeholder);
     });

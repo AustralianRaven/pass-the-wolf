@@ -5,6 +5,7 @@ import { WOLF_DESIGNS } from '../animals/wolf-design';
 import { createDieMesh, createHitboxMesh, setCollarColour } from './die-mesh';
 import { createWolfMesh, requestWolfGeometry } from './wolf-mesh';
 import { carvedTexture, feltTexture } from './textures';
+import type { Wobble } from './wobble';
 
 /** In-game detail: the dice are small on screen, so a coarser sculpt builds faster. */
 export const GAME_STEP = 0.014;
@@ -15,7 +16,7 @@ function meshFor(animal: AnimalDefinition, collar: string): THREE.Group {
   // Until the sculpted body is carved, show the collider hulls in the wolf's coat colour.
   const placeholder = createDieMesh(animal, collar);
   placeholder.getObjectByName('collar')?.removeFromParent();
-  const model = createWolfMesh(design, { step: GAME_STEP, collar, async: true, placeholder });
+  const model = createWolfMesh(design, { step: GAME_STEP, collar, async: true, placeholder, wobble: true });
   // Display-only animal: fitted inside the shared hitbox by its own scale and offset.
   const fit = animal.fit ?? { scale: 1, offset: [0, 0, 0] as const };
   model.scale.setScalar(fit.scale);
@@ -71,9 +72,10 @@ export class TableScene {
   readonly camera: THREE.PerspectiveCamera;
   private readonly scene = new THREE.Scene();
   private dieMeshes: THREE.Group[] = [];
+  private wobbleOn = true;
+  private lastRender = 0;
   private hitboxMeshes: THREE.Group[] = [];
   private showHitboxes = false;
-  private readonly aim: THREE.Line;
   private readonly raycaster = new THREE.Raycaster();
   private readonly tablePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -93,10 +95,6 @@ export class TableScene {
     this.buildLights();
     this.buildTable();
 
-    const aimGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
-    this.aim = new THREE.Line(aimGeometry, new THREE.LineBasicMaterial({ color: '#e9dcc4', transparent: true, opacity: 0.85 }));
-    this.aim.visible = false;
-    this.scene.add(this.aim);
 
     this.resize();
   }
@@ -217,22 +215,6 @@ export class TableScene {
     return this.raycaster.ray.intersectPlane(this.tablePlane, hit) ? hit : null;
   }
 
-  showAim(from: THREE.Vector3 | null, to?: THREE.Vector3): void {
-    if (!from || !to) {
-      this.aim.visible = false;
-      return;
-    }
-    const pos = this.aim.geometry.getAttribute('position') as THREE.BufferAttribute;
-    pos.setXYZ(0, from.x, 0.05, from.z);
-    pos.setXYZ(1, to.x, 0.05, to.z);
-    pos.needsUpdate = true;
-    this.aim.visible = true;
-  }
-
-  showAimFrom(from: THREE.Vector3, angle: number, length: number): void {
-    this.showAim(from, new THREE.Vector3(from.x + Math.cos(angle) * length, 0, from.z + Math.sin(angle) * length));
-  }
-
   resize(): void {
     const { clientWidth: w, clientHeight: h } = this.canvas;
     if (w === 0 || h === 0) return;
@@ -241,19 +223,6 @@ export class TableScene {
     // Keep the whole tray in view on narrower windows.
     this.camera.fov = w / h < 1.5 ? 46 : 38;
     this.camera.updateProjectionMatrix();
-  }
-
-  /** Which wolf (0 or 1) is under the pointer, if any. */
-  pickDie(clientX: number, clientY: number): number | null {
-    const rect = this.canvas.getBoundingClientRect();
-    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
-    this.raycaster.setFromCamera(ndc, this.camera);
-    const hits = this.raycaster.intersectObjects(this.dieMeshes, true);
-    for (const hit of hits) {
-      const i = this.dieMeshes.findIndex((m) => m === hit.object || m.getObjectById(hit.object.id));
-      if (i >= 0) return i;
-    }
-    return null;
   }
 
   /** Midpoint of the two wolves, for the cutscene camera. */
@@ -287,7 +256,27 @@ export class TableScene {
     this.shot = { fromPos: this.camera.position.clone(), toPos, fromLook: this.lookTarget.clone(), toLook, start: performance.now(), ms: Math.max(1, ms) };
   }
 
+  /** Floppy tail, ears and legs on or off (render only; the physics never sees them). */
+  setWobble(on: boolean): void {
+    this.wobbleOn = on;
+    if (!on) for (const w of this.wobbles()) w.reset();
+  }
+
+  private wobbles(): Wobble[] {
+    return this.dieMeshes.map((g) => g.getObjectByName('model')?.userData.wobble as Wobble | undefined).filter((w): w is Wobble => !!w);
+  }
+
   render(): void {
+    const now = performance.now();
+    const dt = this.lastRender ? Math.min(0.05, (now - this.lastRender) / 1000) : 0;
+    this.lastRender = now;
+    if (this.wobbleOn) {
+      this.scene.updateMatrixWorld();
+      for (const g of this.dieMeshes) {
+        const model = g.getObjectByName('model');
+        (model?.userData.wobble as Wobble | undefined)?.update(dt, model!.matrixWorld);
+      }
+    }
     if (this.shot) {
       const t = Math.min(1, (performance.now() - this.shot.start) / this.shot.ms);
       const e = 1 - Math.pow(1 - t, 4);

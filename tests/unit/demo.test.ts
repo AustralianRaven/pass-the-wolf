@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_RESULTS, demoThrow, resultKey } from '../../src/demo/results';
+import { DEMO_RESULTS, demoThrow, resultKey, stageAlpha } from '../../src/demo/results';
 import seeds from '../../src/demo/demo-seeds.json';
 import { PIG_HITBOX } from '../../src/animals/pig-hitbox';
 import { WOLF_DICE } from '../../src/animals/wolf-dice';
 import type { SettledDice } from '../../src/physics/dice-world';
 import type { GenericPose } from '../../src/rules/poses';
+import { DiceWorld, loadRapier } from '../../src/physics/dice-world';
 
 const settled = (a: GenericPose, b: GenericPose, touching = false, stacked = false): SettledDice => ({
   poses: [a, b],
@@ -34,7 +35,25 @@ describe('Feature: demo result keys', () => {
 
   it('Scenario: Given the recorded demo seeds, Then every menu result has a real throw', () => {
     const recorded = seeds as Record<string, number>;
-    for (const r of DEMO_RESULTS) expect(recorded[r.key], `Then ${r.label} has a recorded seed`).toBeTypeOf('number');
+    for (const r of DEMO_RESULTS.filter((x) => x.key !== 'alpha')) expect(recorded[r.key], `Then ${r.label} has a recorded seed`).toBeTypeOf('number');
+  });
+});
+
+describe('Feature: the demo Tangled and Alpha are real physics', () => {
+  it('Scenario: Given the recorded Tangled throw, When it is replayed, Then the visible wolves really touch', async () => {
+    const seed = (seeds as Record<string, number>).tangled;
+    expect(seed, 'Then a Tangled throw is recorded').toBeTypeOf('number');
+    const world = new DiceWorld(await loadRapier(), [WOLF_DICE[0]!, WOLF_DICE[0]!]);
+    world.throwDice(demoThrow(seed!));
+    expect(resultKey(world.settle()), 'Then the throw lands Tangled').toBe('tangled');
+    world.free();
+  });
+
+  it('Scenario: Given the staged Alpha, When it settles, Then one wolf really rides the other', async () => {
+    const world = new DiceWorld(await loadRapier(), [WOLF_DICE[0]!, WOLF_DICE[0]!]);
+    stageAlpha(world);
+    expect(resultKey(world.settle()), 'Then the piggyback holds and reads as the Alpha').toBe('alpha');
+    world.free();
   });
 });
 

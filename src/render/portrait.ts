@@ -5,6 +5,9 @@ import type { GenericPose } from '../rules/poses';
 import { GAME_STEP } from './scene';
 import { createWolfMesh, requestWolfGeometry } from './wolf-mesh';
 import { feltTexture } from './textures';
+import { DiceWorld, loadRapier } from '../physics/dice-world';
+import { demoThrow, stageAlpha } from '../demo/results';
+import demoSeeds from '../demo/demo-seeds.json';
 
 /**
  * Still renders of the real wolf model in each resting pose, for the score sheet tiles and the
@@ -64,6 +67,36 @@ function posedWolf(animal: AnimalDefinition, collar: string, up: readonly [numbe
   return holder;
 }
 
+/**
+ * The wolves exactly where the physics leaves them, centred on the felt. Used for the Tangled
+ * and Alpha tiles so they show a landing that really scores, not a staged one.
+ */
+async function physicsWolves(animal: AnimalDefinition, collar: string, setup: (w: DiceWorld) => void): Promise<THREE.Group[]> {
+  const world = new DiceWorld(await loadRapier(), [animal, animal]);
+  setup(world);
+  const poses = world.dice.map((d) => world.visiblePose(d));
+  world.free();
+  const cx = (poses[0]!.at[0] + poses[1]!.at[0]) / 2;
+  const cz = (poses[0]!.at[2] + poses[1]!.at[2]) / 2;
+  const design = WOLF_DESIGNS.find((d) => d.id === animal.scoring.id) ?? WOLF_DESIGNS[0]!;
+  const fit = animal.fit ?? { scale: 1, offset: [0, 0, 0] as const };
+  return poses.map(({ at, q }) => {
+    const model = createWolfMesh(design, { step: GAME_STEP, collar });
+    model.scale.setScalar(fit.scale);
+    model.position.set(...fit.offset);
+    const holder = new THREE.Group();
+    holder.add(model);
+    holder.position.set(at[0] - cx, at[1], at[2] - cz);
+    holder.quaternion.set(q.x, q.y, q.z, q.w);
+    holder.traverse((o) => {
+      o.castShadow = true;
+    });
+    return holder;
+  });
+}
+
+const SEEDS = demoSeeds as Record<string, number>;
+
 function stage(): THREE.Scene {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#1e1533');
@@ -103,17 +136,25 @@ export async function renderPortrait(animal: AnimalDefinition, collar: string, s
     b.position.z -= 0.2;
     wolves.push(a, b);
   } else if (shot.kind === 'touching') {
-    const a = posedWolf(animal, collar, POSE_UP.sideMarkUp, 0.3);
-    const b = posedWolf(animal, collar, POSE_UP.back, 1.9);
-    a.position.x -= 0.32;
-    b.position.x += 0.32;
-    wolves.push(a, b);
+    // The demo page's Tangled throw: a real landing where the visible wolves touch.
+    const seed = SEEDS.tangled;
+    wolves.push(
+      ...(await physicsWolves(animal, collar, (w) => {
+        if (seed === undefined) {
+          w.place(0, [0, 0.02, 0], { x: 0, y: 0, z: 0, w: 1 });
+          w.place(1, [0.15, 0.02, 0.5], { x: 0, y: 0, z: 0, w: 1 });
+        } else w.throwDice(demoThrow(seed));
+        w.settle();
+      })),
+    );
   } else {
-    const a = posedWolf(animal, collar, POSE_UP.upright, 0.5);
-    const b = posedWolf(animal, collar, POSE_UP.sideMarkDown, 0.9);
-    b.position.y += 0.5;
-    b.position.x += 0.08;
-    wolves.push(a, b);
+    // The piggyback: one wolf set on the other's back and let settle, so it really rides.
+    wolves.push(
+      ...(await physicsWolves(animal, collar, (w) => {
+        stageAlpha(w);
+        w.settle();
+      })),
+    );
   }
   for (const w of wolves) scene.add(w);
 

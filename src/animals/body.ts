@@ -28,6 +28,12 @@ export interface AnimalDefinition {
   readonly parts: readonly BodyPart[];
   /** How the visible model sits inside the hitbox: a uniform scale, then an offset in body units. */
   readonly fit?: { readonly scale: number; readonly offset: Vec3 };
+  /**
+   * The visible model as convex point clouds in the body frame, fit applied. Tangled and Alpha
+   * are judged on these, so a landing scores what the player sees, not the hidden hitbox.
+   * Omitted, the hitbox stands in.
+   */
+  readonly silhouette?: readonly (readonly Vec3[])[];
   readonly palette: AnimalPalette;
   /** Where the flank mark sits, on the +Z side of the body. */
   readonly markAt: Vec3;

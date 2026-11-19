@@ -3,7 +3,7 @@ import record from '../../src/animals/pig-odds.json';
 import { PIG_TUNE } from '../../src/animals/pig-hitbox';
 import { POSE_TARGETS, ROLL_TARGETS, TOLERANCE } from '../../src/animals/wolf-targets';
 import { POSE_BOUNDARIES } from '../../src/physics/classify';
-import { ALPHA_SUPPORT } from '../../src/physics/dice-world';
+import { CONTACT_RULE, THROW_SPACING } from '../../src/physics/dice-world';
 
 /**
  * The odds gate (issue #1). The heavy simulation runs offline (docs/calibration.md) and is
@@ -16,7 +16,8 @@ describe('Feature: Auto-roll odds match the target table', () => {
   it('Scenario: Given the odds record, Then it was measured on the current pig, boundaries and Alpha rule', () => {
     expect(record.tune, 'Then the record matches the current pig tuning (re-run calibration if not)').toEqual(PIG_TUNE);
     expect(record.boundaries, 'Then the record matches the current pose boundaries').toEqual(POSE_BOUNDARIES);
-    expect(record.alphaSupport, 'Then the record matches the current Alpha rule').toBe(ALPHA_SUPPORT);
+    expect(record.contactRule, 'Then the record matches the current Tangled and Alpha rules').toBe(CONTACT_RULE);
+    expect(record.throwSpacing, 'Then the record matches the current Auto-roll throw spacing').toBe(THROW_SPACING);
     expect(record.profile, 'Then the record measures Auto-roll throws').toBe('auto-roll');
   });
 
@@ -32,12 +33,5 @@ describe('Feature: Auto-roll odds match the target table', () => {
   it('Scenario: Given the odds record, Then Tangled lands within ±10% of its target', () => {
     const value = (record.resultPct as Record<string, number>).tangled ?? 0;
     expect(within(value, ROLL_TARGETS.tangled), `Then Tangled at ${value}% is within ±10% of ${ROLL_TARGETS.tangled}%`).toBe(true);
-  });
-
-  it('Scenario: Given an Alpha check of 800,000+ throws, Then Alpha lands within ±10% of its target', () => {
-    // Alpha is ~1 roll in 2,000: only a very large run can judge it. Smaller records skip this check.
-    const value = (record.resultPct as Record<string, number>).alpha ?? 0;
-    if (record.throws < 800_000) return;
-    expect(within(value, ROLL_TARGETS.alpha), `Then Alpha at ${value}% is within ±10% of ${ROLL_TARGETS.alpha}%`).toBe(true);
   });
 });

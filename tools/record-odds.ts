@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { PIG_TUNE } from '../src/animals/pig-hitbox';
 import { POSE_BOUNDARIES } from '../src/physics/classify';
-import { ALPHA_SUPPORT } from '../src/physics/dice-world';
+import { CONTACT_RULE, THROW_SPACING } from '../src/physics/dice-world';
 
 interface Report {
   throws: number;
@@ -28,7 +28,8 @@ const record = {
   throws,
   tune: PIG_TUNE,
   boundaries: POSE_BOUNDARIES,
-  alphaSupport: ALPHA_SUPPORT,
+  contactRule: CONTACT_RULE,
+  throwSpacing: THROW_SPACING,
   posePct: avg('posePct'),
   resultPct: avg('resultPct'),
   avgPointsPerRoll: Number((reports.reduce((s, r) => s + r.avgPointsPerRoll * r.throws, 0) / throws).toFixed(2)),

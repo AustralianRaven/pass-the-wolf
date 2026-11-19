@@ -22,6 +22,8 @@ try {
 }
 
 const tuneArg = process.argv.find((a) => a.startsWith('--tune='));
+const spacingArg = process.argv.find((a) => a.startsWith('--spacing='));
+const fanArg = process.argv.find((a) => a.startsWith('--fan='));
 /** --dump=file writes every throw's resting up-vectors and contacts, for re-classifying offline. */
 const dumpArg = process.argv.find((a) => a.startsWith('--dump='));
 const dump: { up: number[][]; y: number[]; touching: boolean; stacked: boolean; support: number }[] = [];
@@ -51,6 +53,8 @@ const started = Date.now();
 for (let i = 0; i < throws; i++) {
   // A fresh world per throw keeps each throw independent and deterministic.
   const world = new DiceWorld(R, [animalA, animalB]);
+  if (spacingArg) world.spacing = Number(spacingArg.slice('--spacing='.length));
+  if (fanArg) world.fan = Number(fanArg.slice('--fan='.length));
   world.throwDice({ ...autoRollInput(rng), seed: Math.floor(rng() * 2 ** 32) });
   const settled = world.settle();
   if (dumpArg) {

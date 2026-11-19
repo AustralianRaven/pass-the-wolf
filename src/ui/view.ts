@@ -3,7 +3,7 @@ import { buildScoreCard } from '../rules/scorecard';
 import type { RollResult } from '../rules/scoring';
 import { SEAT_COLOURS, TARGET_CHOICES, cpuDice, type Setup } from '../game/settings';
 import { DEFAULT_DIE, PICKABLE } from '../animals/registry';
-import { ALPHA_POINTS, DEN_POINTS, DOUBLE_MULTIPLIER, MAX_SEATS, MIN_SEATS } from '../rules/constants';
+import { DEN_POINTS, DOUBLE_MULTIPLIER, MAX_SEATS, MIN_SEATS } from '../rules/constants';
 import { SCORING_POSES } from '../rules/poses';
 import type { DebugSettings } from '../game/debug';
 import { renderPortrait, type PortraitScene } from '../render/portrait';
@@ -99,6 +99,7 @@ export interface ViewHandlers {
   onNewGame(): void;
   onRematch(): void;
   onDebugChange(settings: DebugSettings): void;
+  onFloppyChange(on: boolean): void;
 }
 
 /** All DOM for the game: setup block, wolf den, HUD, trail strip, score sheet and handover band. */
@@ -250,6 +251,12 @@ export class GameView {
   }
 
   /** Set the stored debug options before the first render. */
+  private floppy = true;
+
+  setFloppy(on: boolean): void {
+    this.floppy = on;
+  }
+
   setDebugSettings(s: DebugSettings): void {
     this.debug = s;
   }
@@ -267,6 +274,14 @@ export class GameView {
     };
     this.renderSettings = () => {
       body.replaceChildren(
+        el('fieldset', { class: 'settings__group' }, [
+          el('legend', { class: 'sheet__h', text: 'Motion' }),
+          toggle('Floppy wolves', 'Tails, ears and legs flop about as the wolves tumble. Looks only: the odds never change.', this.floppy, false, (on) => {
+            this.floppy = on;
+            this.handlers.onFloppyChange(on);
+            this.renderSettings();
+          }),
+        ]),
         el('fieldset', { class: 'settings__group' }, [
           el('legend', { class: 'sheet__h', text: 'Debug' }),
           toggle('Debug mode', 'Unlocks the tools below.', this.debug.enabled, false, (on) => this.changeDebug({ ...this.debug, enabled: on })),
@@ -772,7 +787,7 @@ export class GameView {
       tiles.append(tile(scoring.poseNames[pose], `${p} pts`, `Double ${p * 2 * DOUBLE_MULTIPLIER} pts`, { kind: 'single', pose }));
     }
     tiles.append(
-      tile('Alpha', `+${ALPHA_POINTS} pts`, 'One wolf riding the other', { kind: 'alpha' }, 'gold'),
+      tile('Alpha', 'Instant win', 'One wolf riding the other', { kind: 'alpha' }, 'gold'),
       tile('Scattered', 'Turn lost', 'Opposite sides', { kind: 'pair', poses: ['sideMarkUp', 'sideMarkDown'] }, 'bust'),
       tile('Tangled', 'Bank wiped', 'Wolves touching', { kind: 'touching' }, 'bust'),
     );
@@ -817,6 +832,9 @@ export class GameView {
   private cell(turn: TurnRecord | null): HTMLElement {
     if (!turn) return el('td', { class: 'card__cell is-empty', text: '' });
     const rolls = `${turn.rolls.length} roll${turn.rolls.length === 1 ? '' : 's'}`;
+    if (turn.outcome === 'alpha') {
+      return el('td', { class: 'card__cell is-alpha', attrs: { title: rolls } }, [el('span', { class: 'card__pts', text: 'Alpha' })]);
+    }
     if (turn.outcome === 'banked') {
       return el('td', { class: 'card__cell', attrs: { title: rolls } }, [el('span', { class: 'card__pts', text: `+${turn.banked}` })]);
     }

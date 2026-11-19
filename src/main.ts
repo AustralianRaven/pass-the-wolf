@@ -5,6 +5,7 @@ import './ui/styles.css';
 import { GameController } from './game/controller';
 import { loadDebugSettings, readDebugFlags, saveDebugSettings } from './game/debug';
 import { loadSetup } from './game/settings';
+import { loadFloppy, saveFloppy } from './game/motion';
 import { loadRapier } from './physics/dice-world';
 import { prewarmWolves, TableScene } from './render/scene';
 import { GameView } from './ui/view';
@@ -21,6 +22,10 @@ async function boot(): Promise<void> {
       saveDebugSettings(s);
       scene?.setShowHitboxes(s.enabled && s.showHitboxes);
     },
+    onFloppyChange: (on) => {
+      saveFloppy(on);
+      scene?.setWobble(on);
+    },
     onStart: (setup) => controller?.start(setup),
     onRoll: () => controller?.rollButton(),
     onBank: () => controller?.bank(),
@@ -29,10 +34,13 @@ async function boot(): Promise<void> {
     onRematch: () => controller?.rematch(),
   });
   view.setDebugSettings(debug);
+  const floppy = loadFloppy();
+  view.setFloppy(floppy);
   view.showSetup(loadSetup());
 
   scene = new TableScene(view.canvas);
   scene.setShowHitboxes(debug.enabled && debug.showHitboxes);
+  scene.setWobble(floppy);
   const R = await loadRapier();
   controller = new GameController(R, scene, view, readDebugFlags());
   document.documentElement.dataset.ready = 'true';

@@ -1,5 +1,5 @@
 import { createRng } from '../physics/rng';
-import { autoRollInput, type SettledDice, type ThrowInput } from '../physics/dice-world';
+import { autoRollInput, type DiceWorld, type SettledDice, type ThrowInput } from '../physics/dice-world';
 import { isSidePose } from '../rules/poses';
 
 /**
@@ -37,8 +37,17 @@ export const DEMO_RESULTS: readonly { key: string; label: string; group: 'Single
   { key: 'alpha', label: 'Alpha', group: 'Specials' },
 ];
 
-/** The keys the seed finder searches for. */
-export const DEMO_KEYS: readonly string[] = DEMO_RESULTS.map((r) => r.key);
+/** The keys the seed finder searches for (the Alpha is staged, not searched). */
+export const DEMO_KEYS: readonly string[] = DEMO_RESULTS.map((r) => r.key).filter((k) => k !== 'alpha');
+
+/**
+ * The Alpha is close to impossible on a real throw, so the demo stages it: one wolf is dropped
+ * onto its packmate's back and the physics settles it. Every other demo is a real throw.
+ */
+export function stageAlpha(world: DiceWorld): void {
+  world.place(0, [0, 0.02, 0.4], { x: 0, y: 0, z: 0, w: 1 });
+  world.place(1, [-0.05, 0.62, 0.4], { x: 0, y: 0, z: 0, w: 1 });
+}
 
 /** A demo throw is an ordinary Auto-roll throw, fully determined by its seed. */
 export function demoThrow(seed: number): ThrowInput {

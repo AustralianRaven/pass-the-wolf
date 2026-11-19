@@ -138,10 +138,8 @@ test.describe('Feature: keyboard play', () => {
     await page.keyboard.press('Space');
     await expect(handover(page), 'Then Space takes the wolves').toBeHidden();
     await page.locator('body').focus();
-    await page.keyboard.down('Space');
-    await page.waitForTimeout(150);
-    await page.keyboard.up('Space');
-    await expect(pot(page), 'Then holding and releasing Space throws for a Sniff').toHaveText('10');
+    await page.keyboard.press('Space');
+    await expect(pot(page), 'Then one press of Space auto-rolls for a Sniff').toHaveText('10');
     await page.keyboard.press('b');
     await expect(page.getByRole('heading', { name: "Ash's turn" }), 'Then B banks and passes the wolves').toBeVisible();
   });

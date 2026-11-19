@@ -11,7 +11,7 @@ export interface Seat {
   readonly dice: readonly [string, string];
 }
 
-export type TurnOutcome = 'banked' | 'scattered' | 'tangled';
+export type TurnOutcome = 'banked' | 'scattered' | 'tangled' | 'alpha';
 
 /** One finished turn: the source of truth for the score card. */
 export interface TurnRecord {
@@ -76,7 +76,8 @@ function assertPhase(state: GameState, phase: GamePhase, action: string): void {
 
 function endTurn(state: GameState, outcome: TurnOutcome, rolls: readonly RollResult[], banked: number, newScore: number): GameState {
   const seatIndex = state.currentSeat;
-  const lost = outcome === 'banked' ? 0 : state.turnPot + (outcome === 'tangled' ? state.scores[seatIndex]! : 0);
+  const busted = outcome === 'scattered' || outcome === 'tangled';
+  const lost = busted ? state.turnPot + (outcome === 'tangled' ? state.scores[seatIndex]! : 0) : 0;
   const scores = state.scores.map((s, i) => (i === seatIndex ? newScore : s));
   const record: TurnRecord = { round: state.round, seatIndex, rolls, outcome, banked, lost, scoreAfter: newScore };
   const won = newScore >= state.targetScore;
@@ -95,6 +96,12 @@ function endTurn(state: GameState, outcome: TurnOutcome, rolls: readonly RollRes
 export function applyRoll(state: GameState, roll: RollResult): GameState {
   assertPhase(state, 'awaitingRoll', 'roll');
   const rolls = [...state.turnRolls, roll];
+  if (roll.winsGame) {
+    // An instant win: bank the pot and lift the score to the target so the sheet reads as a win.
+    const pot = state.turnPot;
+    const score = Math.max(state.targetScore, state.scores[state.currentSeat]! + pot);
+    return endTurn({ ...state, turnPot: pot }, 'alpha', rolls, pot, score);
+  }
   if (roll.bust) {
     const score = roll.wipesBank ? 0 : state.scores[state.currentSeat]!;
     return endTurn(state, roll.kind === 'tangled' ? 'tangled' : 'scattered', rolls, 0, score);

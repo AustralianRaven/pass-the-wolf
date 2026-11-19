@@ -4,7 +4,7 @@ import '@fontsource-variable/figtree/wght.css';
 import './ui/styles.css';
 import './ui/demo.css';
 import { getAnimal } from './animals/registry';
-import { DEMO_RESULTS, demoThrow, resultKey } from './demo/results';
+import { DEMO_RESULTS, demoThrow, resultKey, stageAlpha } from './demo/results';
 import seeds from './demo/demo-seeds.json';
 import { DiceWorld, MAX_STEPS, TIMESTEP, loadRapier } from './physics/dice-world';
 import { TableScene, prewarmWolves } from './render/scene';
@@ -12,6 +12,7 @@ import { scoreRoll } from './rules/scoring';
 import { CUTSCENE_POINTS } from './game/controller';
 import { playCutscene } from './ui/cutscene';
 import { SEAT_COLOURS } from './game/settings';
+import { loadFloppy } from './game/motion';
 
 /**
  * The demo page: pick a result and watch a real Auto-roll throw that lands on it. Each button
@@ -47,7 +48,7 @@ async function boot(): Promise<void> {
     for (const r of DEMO_RESULTS.filter((x) => x.group === group)) {
       const b = el('button', 'demo__pick', r.label, { type: 'button' });
       b.dataset.key = r.key;
-      if (SEEDS[r.key] === undefined) {
+      if (r.key !== 'alpha' && SEEDS[r.key] === undefined) {
         b.disabled = true;
         b.title = 'No recorded throw for this result yet';
       }
@@ -65,6 +66,7 @@ async function boot(): Promise<void> {
   mount.append(root);
 
   const scene = new TableScene(canvas);
+  scene.setWobble(loadFloppy());
   prewarmWolves();
   const R = await loadRapier();
   const wolf = getAnimal('winter');
@@ -111,12 +113,14 @@ async function boot(): Promise<void> {
 
   const play = (key: string) => {
     const seed = SEEDS[key];
-    if (busy || seed === undefined) return;
+    const staged = key === 'alpha';
+    if (busy || (!staged && seed === undefined)) return;
     busy = true;
     for (const b of buttons) b.classList.toggle('is-current', b.dataset.key === key);
     result.classList.remove('is-shown');
     reset();
-    world!.throwDice(demoThrow(seed));
+    if (staged) stageAlpha(world!);
+    else world!.throwDice(demoThrow(seed!));
     acc = 0;
     onRest = () => {
       const settled = world!.read();
@@ -129,11 +133,12 @@ async function boot(): Promise<void> {
         stacked: settled.stacked,
       });
       label.textContent = roll.label;
-      points.textContent = roll.kind === 'tangled' ? 'Bank wiped' : roll.bust ? 'Turn lost' : `+${roll.points}`;
+      points.textContent = roll.winsGame ? 'Instant win' : roll.kind === 'tangled' ? 'Bank wiped' : roll.bust ? 'Turn lost' : `+${roll.points}`;
       result.classList.add('is-shown');
       result.classList.toggle('is-bust', roll.bust);
       result.classList.toggle('is-big', !roll.bust && roll.points >= CUTSCENE_POINTS);
-      live.textContent = `${roll.label}. ${points.textContent}.${resultKey(settled) === key ? '' : ' (The physics changed since this throw was recorded.)'}`;
+      const note = staged ? ' (Staged: one wolf dropped onto the other. A real throw almost never does this.)' : resultKey(settled) === key ? '' : ' (The physics changed since this throw was recorded.)';
+      live.textContent = `${roll.label}. ${points.textContent}.${note}`;
       const big = (!roll.bust && roll.points >= CUTSCENE_POINTS) || roll.kind === 'alpha' || roll.kind === 'tangled';
       if (!big) {
         busy = false;

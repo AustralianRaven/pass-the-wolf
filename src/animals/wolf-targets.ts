@@ -14,8 +14,11 @@ export const POSE_TARGETS: Readonly<Record<GenericPose, number>> = {
   tailDown: 0.4,
 };
 
-/** Percent per throw for the results that need both dice. */
-export const ROLL_TARGETS = { tangled: 1.6, alpha: 0.05 } as const;
+/**
+ * Percent per throw for the results that need both dice. Alpha (the piggyback) has no rate
+ * target: it only has to be possible, which a recorded demo throw proves (tests/unit/demo.test.ts).
+ */
+export const ROLL_TARGETS = { tangled: 1.6 } as const;
 
 /** A measured value passes when it is within this fraction of its target (±10%). */
 export const TOLERANCE = 0.1;

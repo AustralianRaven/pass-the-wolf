@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyRoll, bank, canBank, newGame, nextTurn, upNext } from '../../src/rules/game';
 import { buildScoreCard } from '../../src/rules/scorecard';
-import { points, scattered, seats, tangled } from './fixtures';
+import { alpha, points, scattered, seats, tangled } from './fixtures';
 
 describe('Feature: setting up a game', () => {
   it.each([1, 7])('Scenario: Given %i seats, Then the game refuses to start', (n) => {
@@ -105,5 +105,18 @@ describe('Feature: rounds and the score card', () => {
     expect(card[0]?.cells[1]?.outcome, 'Then round 1, seat 2 was Scattered').toBe('scattered');
     expect(card[1]?.cells[0]?.scoreAfter, 'Then round 2, seat 1 totals 15').toBe(15);
     expect(card[1]?.cells[1], 'Then round 2, seat 2 has not played').toBeNull();
+  });
+});
+
+describe('Feature: the Alpha', () => {
+  it('Scenario: Given a turn with points in the pot, When the Alpha lands, Then the thrower wins on the spot', () => {
+    let g = newGame({ seats: seats(2) });
+    g = applyRoll(g, points(10));
+    g = applyRoll(g, alpha);
+    expect(g.phase, 'Then the game is over').toBe('gameOver');
+    expect(g.winner, 'Then the thrower wins').toBe(0);
+    expect(g.scores[0], 'Then the score reads as reaching the target').toBe(100);
+    expect(g.history.at(-1)?.outcome, 'Then the turn is recorded as an Alpha').toBe('alpha');
+    expect(g.history.at(-1)?.lost, 'Then nothing is lost').toBe(0);
   });
 });

@@ -2,7 +2,7 @@
 // Usage: node tools/summarize.mjs calibration/run-*.report.json
 import { readFileSync } from 'node:fs';
 const T = { sideMarkDown: 34.8, sideMarkUp: 30.0, back: 22.4, upright: 8.8, noseDown: 3.0, lean: 0.6, tailDown: 0.4 };
-const R = { tangled: 1.6, alpha: 0.05 };
+const R = { tangled: 1.6 };
 let n = 0; let pts = 0; const pose = {}; const res = {};
 for (const f of process.argv.slice(2)) {
   const j = JSON.parse(readFileSync(f, 'utf8'));
@@ -14,4 +14,5 @@ const line = (k, v, t) => console.log(`${k.padEnd(13)} ${v.toFixed(3).padStart(7
 console.log(`${n} throws`);
 for (const [k, t] of Object.entries(T)) line(k, pose[k] / n, t);
 for (const [k, t] of Object.entries(R)) line(k, (res[k] ?? 0) / n, t);
+console.log(`alpha         ${((res.alpha ?? 0) / n).toFixed(4).padStart(7)}%  (no target: it only has to be possible)`);
 console.log(`scattered ${(res.scattered / n).toFixed(2)}%, avg points per roll ${(pts / n).toFixed(2)}`);

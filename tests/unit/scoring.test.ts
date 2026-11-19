@@ -38,10 +38,10 @@ describe('Feature: scoring a wolf + wolf roll', () => {
     expect(r.wipesBank, 'Then the banked score is wiped').toBe(true);
   });
 
-  it('Scenario: Given one wolf rests on the other, Then the roll is Alpha and does not bust', () => {
+  it('Scenario: Given one wolf rests on the other, Then the roll is Alpha and wins the game', () => {
     const r = scoreRoll(outcome('back', 'upright', { stacked: true }));
     expect(r.kind, 'Then the kind is alpha').toBe('alpha');
-    expect(r.points, 'Then Alpha scores its bonus').toBe(50);
+    expect(r.winsGame, 'Then Alpha is an instant win').toBe(true);
     expect(r.bust, 'Then Alpha is not a bust').toBe(false);
   });
 

@@ -1,17 +1,15 @@
 {
-  "scattered": 3,
-  "den": 1,
+  "scattered": 1,
+  "den": 3,
+  "single:lean": 6,
   "double:back": 7,
-  "single:back": 2,
-  "single:upright": 5,
-  "tangled": 16,
-  "single:tailDown": 23,
-  "single:noseDown": 17,
-  "mixed:back+upright": 43,
+  "tangled": 8,
+  "single:back": 14,
+  "single:upright": 15,
+  "single:noseDown": 20,
+  "mixed:back+upright": 44,
   "double:upright": 57,
-  "single:lean": 101,
-  "double:noseDown": 683,
-  "alpha": 1427,
-  "double:lean": 4665,
-  "double:tailDown": 36902
+  "single:tailDown": 88,
+  "double:noseDown": 884,
+  "double:lean": 17173
 }

@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { WOLF } from '../../src/animals/wolf';
+import { WINTER_WOLF } from '../../src/animals/wolf-dice';
 import { classifyPose } from '../../src/physics/classify';
 import { DiceWorld, MAX_STEPS, capsuleRotation, loadRapier } from '../../src/physics/dice-world';
 import type { GenericPose } from '../../src/rules/poses';
@@ -97,6 +98,34 @@ describe('Feature: the physics dice world', () => {
       expect(Math.abs(p.z), 'Then each die is inside the arena on Z').toBeLessThan(3.6);
       expect(p.y, 'Then each die is on the table, not through it').toBeGreaterThan(-0.1);
     }
+    w.free();
+  });
+});
+
+describe('Feature: Tangled and Alpha are judged on the visible wolves', () => {
+  let R: Rapier;
+  beforeAll(async () => {
+    R = await loadRapier();
+  });
+
+  it('Scenario: Given two winter wolves whose hidden hitboxes touch but whose fur does not, Then they are not Tangled', () => {
+    const w = new DiceWorld(R, [WINTER_WOLF, WINTER_WOLF]);
+    w.place(0, [0, 0.02, 0], { x: 0, y: 0, z: 0, w: 1 });
+    w.place(1, [0, 0.02, 0.57], { x: 0, y: 0, z: 0, w: 1 });
+    w.settle(4);
+    const s = w.read();
+    expect(s.touching, 'Then a visible gap is not a tangle').toBe(false);
+    w.free();
+  });
+
+  it('Scenario: Given one winter wolf standing on the other, When the world settles, Then it is the Alpha', () => {
+    const w = new DiceWorld(R, [WINTER_WOLF, WINTER_WOLF]);
+    w.place(0, [0, 0.02, 0], { x: 0, y: 0, z: 0, w: 1 });
+    w.place(1, [0, 0.62, 0], { x: 0, y: 0, z: 0, w: 1 });
+    const s = w.settle();
+    expect(w.dice[1].body.translation().y, 'Then the top wolf is still riding').toBeGreaterThan(0.4);
+    expect(s.touching, 'Then the wolves touch').toBe(true);
+    expect(s.stacked, 'Then the piggyback is the Alpha').toBe(true);
     w.free();
   });
 });

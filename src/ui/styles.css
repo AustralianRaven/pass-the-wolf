@@ -281,6 +281,8 @@ select {
   background: rgb(18 12 34 / 0.78);
   border-block: 3px solid var(--ink);
   opacity: 0;
+  /* A caption over the tray: presses go through to the wolves underneath. */
+  pointer-events: none;
   font-family: var(--font-display);
   font-weight: 900;
   line-height: 1;
