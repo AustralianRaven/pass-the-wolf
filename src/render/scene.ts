@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { AnimalDefinition } from '../animals/body';
 import { ARENA, hexWalls, type DiceWorld } from '../physics/dice-world';
-import { WOLF_DESIGNS } from '../animals/wolf-design';
+import { DESIGNS as WOLF_DESIGNS } from '../animals/designs';
 import { createDieMesh, createHitboxMesh, setCollarColour } from './die-mesh';
 import { createWolfMesh, requestWolfGeometry } from './wolf-mesh';
 import { carvedTexture, feltTexture } from './textures';

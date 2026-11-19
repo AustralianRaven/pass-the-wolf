@@ -1,5 +1,5 @@
 import type { WolfDesign } from '../animals/wolf-design';
-import { noise3, sculptDistance, type Sculpt } from './sdf';
+import { noise3, partDistance, sculptDistance, type Sculpt } from './sdf';
 import { surfaceNets } from './surface-nets';
 
 /**
@@ -49,7 +49,7 @@ export function sculptWolfArrays(design: WolfDesign, step: number): WolfArrays {
   const sculpt: Sculpt = { parts: design.parts, fur: design.fur, blend: 0.05 };
   const w = design.width;
   const sdf = (x: number, y: number, z: number) => sculptDistance(sculpt, x, y, z / w);
-  const halfZ = 0.3 * w;
+  const halfZ = 0.36 * w;
   const mesh = surfaceNets(sdf, { min: [-0.9, -0.05, -halfZ], max: [0.95, 1.05, halfZ] }, step);
 
   const base = rgb(design.coat.base);
@@ -63,6 +63,10 @@ export function sculptWolfArrays(design: WolfDesign, step: number): WolfArrays {
   const [mx, my] = design.markAt;
 
   const colours = new Float32Array(mesh.positions.length);
+  if (design.paint) {
+    paintByGroup(design, mesh.positions, mesh.normals, colours);
+    return { positions: mesh.positions, normals: mesh.normals, colours, indices: mesh.indices };
+  }
   for (let v = 0; v < mesh.positions.length; v += 3) {
     const x = mesh.positions[v]!;
     const y = mesh.positions[v + 1]!;
@@ -96,4 +100,61 @@ export function sculptWolfArrays(design: WolfDesign, step: number): WolfArrays {
     colours[v + 2] = c[2];
   }
   return { positions: mesh.positions, normals: mesh.normals, colours, indices: mesh.indices };
+}
+
+/**
+ * The painter for animals other than the wolf: every vertex takes its nearest part's group colour,
+ * then the shared touches: belly and back shading, grizzle flecks, the nose and the moon mark.
+ */
+function paintByGroup(design: WolfDesign, positions: Float32Array, normals: Float32Array, colours: Float32Array): void {
+  const paint = design.paint!;
+  const w = design.width;
+  const keys = Object.keys(paint.groups).sort((a, b) => b.length - a.length);
+  const colourOf = new Map<string, RGB>();
+  const groupColour = (group: string | undefined): RGB => {
+    const g = group ?? '';
+    if (!colourOf.has(g)) {
+      const key = keys.find((k) => g.startsWith(k));
+      colourOf.set(g, rgb(key ? paint.groups[key]! : design.coat.base));
+    }
+    return colourOf.get(g)!;
+  };
+  const shaded = (group: string | undefined) => !paint.shadeGroups || paint.shadeGroups.some((k) => (group ?? '').startsWith(k));
+  const under = rgb(design.coat.under);
+  const saddle = rgb(design.coat.saddle);
+  const markColour = rgb(design.coat.mark);
+  const black = rgb('#141110');
+  const [nx, ny, nz] = design.nose;
+  const [mx, my] = design.markAt;
+  for (let v = 0; v < positions.length; v += 3) {
+    const x = positions[v]!;
+    const y = positions[v + 1]!;
+    const z = positions[v + 2]!;
+    const nY = normals[v + 1]!;
+    const nZ = normals[v + 2]!;
+    let nearest = Infinity;
+    let group: string | undefined;
+    for (const p of design.parts) {
+      const d = partDistance(p, x, y, z / w);
+      if (d < nearest) {
+        nearest = d;
+        group = p.group;
+      }
+    }
+    const base = groupColour(group);
+    const c: RGB = [base[0], base[1], base[2]];
+    if (shaded(group)) {
+      mix(c, under, smooth(-0.05, -0.65, nY) * (paint.belly ?? 0));
+      mix(c, saddle, smooth(0.2, 0.8, nY) * (paint.back ?? 0));
+    }
+    const g = noise3(x * 60, y * 140, (z / w) * 140);
+    if (g > 0.7) mix(c, under, design.coat.grizzle * (g - 0.7) * 2.5);
+    else if (g < 0.3) mix(c, saddle, design.coat.grizzle * (0.3 - g) * 2.5);
+    const dn = Math.hypot(x - nx, y - ny, z / w - nz);
+    if (dn < 0.035) mix(c, black, smooth(0.035, 0.015, dn));
+    if (z > 0 && nZ > 0.35) mix(c, markColour, inMoon(x - mx, y - my, 0.075) * smooth(0.35, 0.6, nZ));
+    colours[v] = c[0];
+    colours[v + 1] = c[1];
+    colours[v + 2] = c[2];
+  }
 }
