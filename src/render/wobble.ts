@@ -161,6 +161,8 @@ export class Wobble {
   update(dt: number, model: THREE.Matrix4): void {
     model.decompose(modelP, modelQ, modelS);
     const scale = modelS.x;
+    // A bad frame upstream (NaN or a collapsed transform) must never poison the springs for good.
+    if (![modelP.x, modelP.y, modelP.z, modelQ.x, modelQ.y, modelQ.z, modelQ.w, scale, dt].every(Number.isFinite) || scale < 1e-6) return;
     if (!this.ready || modelP.distanceTo(this.lastOrigin) > TELEPORT) {
       this.snap(model, scale);
       this.lastOrigin.copy(modelP);
@@ -171,6 +173,10 @@ export class Wobble {
     while (this.acc >= STEP) {
       this.acc -= STEP;
       for (const p of this.particles) this.stepParticle(p, model, scale);
+      if (!this.particles.every((p) => Number.isFinite(p.x.x + p.x.y + p.x.z))) {
+        this.snap(model, scale);
+        return;
+      }
     }
     this.pose(model);
   }

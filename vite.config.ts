@@ -9,7 +9,7 @@ export default defineConfig({
     target: 'es2022',
     chunkSizeWarningLimit: 4000,
     rollupOptions: {
-      input: { main: 'index.html', demo: 'demo.html' },
+      input: { main: 'index.html', demo: 'demo.html', winsScreens: 'wins-screens.html' },
     },
   },
   test: {

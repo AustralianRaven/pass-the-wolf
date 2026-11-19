@@ -130,6 +130,28 @@ test.describe('Feature: winning', () => {
     await expect(page.locator('.handover .card__total.is-winner'), 'Then the Alpha lifts Kat to the target').toHaveText('100');
   });
 
+  test('Scenario: Given a long game on a short screen, When it ends, Then the final score sheet scrolls to New game', async ({ page }) => {
+    await page.setViewportSize({ width: 1100, height: 520 });
+    const sniff = 'noseDown/sideMarkDown';
+    const scatter = 'sideMarkUp/sideMarkDown';
+    await open(page, [sniff, scatter, sniff, scatter, sniff, scatter, sniff, scatter, sniff]);
+    await startTable(page, ['Kat', 'Ash'], 'First to 50');
+    for (let round = 1; round <= 5; round++) {
+      await takeWolves(page, 'Kat');
+      await page.getByRole('button', { name: 'Auto-roll' }).click();
+      await page.getByRole('button', { name: 'Bank 10' }).click();
+      if (round === 5) break;
+      await takeWolves(page, 'Ash');
+      await page.getByRole('button', { name: 'Auto-roll' }).click();
+    }
+    await expect(page.getByRole('heading', { name: 'Kat wins!' }), 'Then Kat wins after five rounds').toBeVisible();
+    const band = page.locator('.handover');
+    expect(await band.evaluate((el) => el.scrollHeight > el.clientHeight), 'Then the sheet is taller than the screen').toBe(true);
+    const again = page.locator('.handover').getByRole('button', { name: 'New game' });
+    await again.scrollIntoViewIfNeeded();
+    await expect(again, 'Then New game can be scrolled into view').toBeInViewport();
+  });
+
   test('Scenario: Given solo play against the computer, When the computer banks past the target, Then the computer wins', async ({ page }) => {
     await open(page, ['upright/sideMarkUp', 'tailDown/tailDown']);
     await page.getByLabel('Race').selectOption({ label: 'First to 50' });

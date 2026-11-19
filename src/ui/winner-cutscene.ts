@@ -1,11 +1,17 @@
-import { runWinnerScene, type Contender } from '../render/winner-scene';
+import { WINNER_SCENES, randomWinnerScene, runWinnerScene, type Contender, type WinnerSceneId } from '../render/winner-scene';
 
 /**
- * The winner cutscene overlay (#5): letterboxed storm scene, a white flash on each lightning
- * strike, then "<Name> wins!" cut large before the final score band takes over. Skippable with a
+ * The winner cutscene overlay (#5): one of the letterboxed winner scenes (random unless chosen),
+ * a white flash on each strike, then "<Name> wins!" cut large before the final score band takes over. Skippable with a
  * click, Space, Enter or Escape. Under reduced motion it is skipped entirely.
  */
-export function playWinnerCutscene(root: HTMLElement, winner: Contender, losers: readonly Contender[], announce: (text: string) => void): Promise<void> {
+export function playWinnerCutscene(
+  root: HTMLElement,
+  winner: Contender,
+  losers: readonly Contender[],
+  announce: (text: string) => void,
+  scene: WinnerSceneId = randomWinnerScene(),
+): Promise<void> {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return Promise.resolve();
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -57,14 +63,14 @@ export function playWinnerCutscene(root: HTMLElement, winner: Contender, losers:
     window.addEventListener('keydown', onKey, true);
     root.classList.add('is-cutscene');
     root.append(overlay);
-    announce(`${winner.name} wins! A storm rolls in, ${winner.name} heads for the cave, and a tornado sweeps the rest away.`);
+    announce(`${winner.name} wins! ${WINNER_SCENES.find((s) => s.id === scene)?.blurb ?? ''}`);
 
     const strike = () => {
       flash.classList.remove('is-on');
       void flash.offsetWidth;
       flash.classList.add('is-on');
     };
-    void runWinnerScene(canvas, winner, losers, abort.signal, strike).then(() => {
+    void runWinnerScene(canvas, winner, losers, abort.signal, strike, scene).then(() => {
       if (done) return;
       // Hold the title for a beat, then hand over to the final score band.
       call.classList.add('is-shown');

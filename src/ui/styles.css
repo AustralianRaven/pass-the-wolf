@@ -1126,7 +1126,11 @@ select {
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center;
+  /* "safe": a tall final score sheet starts at the top and scrolls, instead of spilling off both edges. */
+  place-items: safe center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: 1rem;
   background: rgb(10 6 22 / 0.55);
   z-index: 5;
 }
