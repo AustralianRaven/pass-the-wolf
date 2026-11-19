@@ -117,6 +117,19 @@ test.describe('Feature: winning', () => {
     await expect(page.locator('.handover .card__total.is-winner'), 'Then the final score card marks 100').toHaveText('100');
   });
 
+  test('Scenario: Given Kat lands the Alpha, Then the winner cutscene plays, can be skipped, and Kat wins', async ({ page }) => {
+    await open(page, ['alpha'], '&winner=1');
+    await startTable(page, ['Kat', 'Ash']);
+    await takeWolves(page, 'Kat');
+    await page.getByRole('button', { name: 'Roll' }).click();
+    const scene = page.getByRole('dialog', { name: 'Kat wins', exact: true });
+    await expect(scene, 'Then the winner cutscene plays').toBeVisible();
+    await page.keyboard.press('Space');
+    await expect(scene, 'Then Space skips it').toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Kat wins!' }), 'Then the final band declares Kat the winner').toBeVisible();
+    await expect(page.locator('.handover .card__total.is-winner'), 'Then the Alpha lifts Kat to the target').toHaveText('100');
+  });
+
   test('Scenario: Given solo play against the computer, When the computer banks past the target, Then the computer wins', async ({ page }) => {
     await open(page, ['upright/sideMarkUp', 'tailDown/tailDown']);
     await page.getByLabel('Race').selectOption({ label: 'First to 50' });
@@ -146,20 +159,26 @@ test.describe('Feature: keyboard play', () => {
 });
 
 test.describe('Feature: choosing wolves', () => {
-  test('Scenario: Given the setup sheet, When Kat opens the wolf picker, Then Winter Wolf is choosable and the next wolf is coming soon', async ({ page }) => {
+  test('Scenario: Given the setup sheet, When Kat opens the animal picker, Then every carved animal is choosable and the last card is coming soon', async ({ page }) => {
     await open(page, []);
-    await page.getByRole('button', { name: /Seat 1 wolf/ }).click();
-    const den = page.getByRole('dialog', { name: /pick your wolf/ });
-    await expect(den, 'Then the wolf picker opens').toBeVisible();
-    await expect(den.getByRole('button', { name: 'Previous wolf' }), 'Then the first card has nothing before it').toBeDisabled();
-    await expect(den.getByRole('button', { name: 'Choose' }), 'Then Winter Wolf can be chosen').toBeEnabled();
-    await den.getByRole('button', { name: 'Next wolf' }).click();
-    await expect(den.locator('.wolfcard.is-focus'), 'Then the next card is the coming soon wolf').toContainText('Coming soon');
-    await expect(den.locator('.wolfcard.is-focus').getByRole('button', { name: 'Locked' }), 'Then the coming soon wolf is locked').toBeDisabled();
-    await den.getByRole('button', { name: 'Previous wolf' }).click();
-    await den.getByRole('button', { name: 'Choose' }).click();
+    await page.getByRole('button', { name: /Seat 1 animal/ }).click();
+    const den = page.getByRole('dialog', { name: /pick your animal/ });
+    const focus = den.locator('.wolfcard.is-focus');
+    await expect(den, 'Then the animal picker opens').toBeVisible();
+    await expect(den.getByRole('button', { name: 'Previous animal' }), 'Then the first card has nothing before it').toBeDisabled();
+    await expect(focus, 'Then the first card is the Winter Wolf').toContainText('Winter Wolf');
+    for (const name of ['Pig', 'Gorilla', 'Beaver', 'Beaver in a Tuxedo', 'Tortoise']) {
+      await den.getByRole('button', { name: 'Next animal' }).click();
+      await expect(focus.getByRole('heading'), `Then the next card is the ${name}`).toHaveText(name);
+      await expect(focus.getByRole('button', { name: 'Choose' }), `Then the ${name} can be chosen`).toBeEnabled();
+    }
+    await den.getByRole('button', { name: 'Next animal' }).click();
+    await expect(focus, 'Then the last card is coming soon').toContainText('Coming soon');
+    await expect(focus.getByRole('button', { name: 'Locked' }), 'Then the coming soon card is locked').toBeDisabled();
+    await den.getByRole('button', { name: 'Previous animal' }).click();
+    await focus.getByRole('button', { name: 'Choose' }).click();
     await expect(den, 'Then choosing closes the picker').toBeHidden();
-    await expect(page.getByRole('button', { name: /Seat 1 wolf: Winter Wolf/ }), 'Then seat 1 throws the Winter Wolf').toBeVisible();
+    await expect(page.getByRole('button', { name: /Seat 1 animal: Tortoise/ }), 'Then seat 1 throws the Tortoise').toBeVisible();
   });
 
   test('Scenario: Given two seats, When Kat picks Glacier for seat 1, Then seat 2 cannot take Glacier', async ({ page }) => {

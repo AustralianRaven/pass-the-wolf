@@ -1,4 +1,4 @@
-import { WOLF_DESIGNS } from '../animals/wolf-design';
+import { DESIGNS as WOLF_DESIGNS } from '../animals/designs';
 import { sculptWolfArrays } from '../sculpt/paint-wolf';
 
 /** Carves wolf meshes off the main thread. Message in: { id, step }; arrays out, transferred. */

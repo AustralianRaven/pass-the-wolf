@@ -11,7 +11,7 @@ export interface Seat {
   readonly dice: readonly [string, string];
 }
 
-export type TurnOutcome = 'banked' | 'scattered' | 'tangled' | 'alpha';
+export type TurnOutcome = 'banked' | 'scattered' | 'tangled' | 'alpha' | 'skipped';
 
 /** One finished turn: the source of truth for the score card. */
 export interface TurnRecord {
@@ -76,7 +76,7 @@ function assertPhase(state: GameState, phase: GamePhase, action: string): void {
 
 function endTurn(state: GameState, outcome: TurnOutcome, rolls: readonly RollResult[], banked: number, newScore: number): GameState {
   const seatIndex = state.currentSeat;
-  const busted = outcome === 'scattered' || outcome === 'tangled';
+  const busted = outcome === 'scattered' || outcome === 'tangled' || outcome === 'skipped';
   const lost = busted ? state.turnPot + (outcome === 'tangled' ? state.scores[seatIndex]! : 0) : 0;
   const scores = state.scores.map((s, i) => (i === seatIndex ? newScore : s));
   const record: TurnRecord = { round: state.round, seatIndex, rolls, outcome, banked, lost, scoreAfter: newScore };
@@ -107,6 +107,12 @@ export function applyRoll(state: GameState, roll: RollResult): GameState {
     return endTurn(state, roll.kind === 'tangled' ? 'tangled' : 'scattered', rolls, 0, score);
   }
   return { ...state, turnPot: state.turnPot + roll.points, turnRolls: rolls };
+}
+
+/** The thrower has dropped out of an online game: their turn ends and the pot is lost. */
+export function forfeitTurn(state: GameState): GameState {
+  assertPhase(state, 'awaitingRoll', 'skip a turn');
+  return endTurn(state, 'skipped', state.turnRolls, 0, state.scores[state.currentSeat]!);
 }
 
 export function canBank(state: GameState): boolean {

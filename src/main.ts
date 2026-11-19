@@ -6,6 +6,7 @@ import { GameController } from './game/controller';
 import { loadDebugSettings, readDebugFlags, saveDebugSettings } from './game/debug';
 import { loadSetup } from './game/settings';
 import { loadFloppy, saveFloppy } from './game/motion';
+import { openLobby } from './ui/lobby';
 import { loadRapier } from './physics/dice-world';
 import { prewarmWolves, TableScene } from './render/scene';
 import { GameView } from './ui/view';
@@ -31,6 +32,7 @@ async function boot(): Promise<void> {
     onBank: () => controller?.bank(),
     onTakeTurn: () => controller?.takeTurn(),
     onNewGame: () => controller?.newTable(),
+    onOnline: () => openFriends(null),
     onRematch: () => controller?.rematch(),
   });
   view.setDebugSettings(debug);
@@ -44,6 +46,23 @@ async function boot(): Promise<void> {
   const R = await loadRapier();
   controller = new GameController(R, scene, view, readDebugFlags());
   document.documentElement.dataset.ready = 'true';
+
+  /** The online lobby; a ?room= link opens it ready to join that room. */
+  function openFriends(room: string | null): void {
+    const first = view.currentSetup.seats[0];
+    openLobby(
+      view.root,
+      { name: first?.kind === 'human' && first.name !== 'You' ? first.name : '', colour: first?.colour ?? '#a58bd6', animal: first?.dice[0] ?? 'winter' },
+      (session, info, replay) => {
+        const net = { session, owners: info.owners };
+        if (replay.length) controller?.catchUp(info.setup, net, replay);
+        else controller?.start(info.setup, net);
+      },
+      room,
+    );
+  }
+  const room = new URLSearchParams(location.search).get('room');
+  if (room) openFriends(room);
   prewarmWolves();
 }
 

@@ -1,12 +1,19 @@
 import type { AnimalDefinition, Vec3 } from './body';
 import { PIG_HITBOX } from './pig-hitbox';
-import { WOLF_DESIGNS, type WolfDesign } from './wolf-design';
+import { DESIGNS as WOLF_DESIGNS } from './designs';
+import type { WolfDesign } from './wolf-design';
 import { WOLF_SCORING } from './wolf-scoring';
 import type { AnimalScoring } from '../rules/animal';
 
 /** A wolf design's scoring: the shared wolf table under the design's own id and name. */
 function scoringFor(design: WolfDesign): AnimalScoring {
-  return { ...WOLF_SCORING, id: design.id, name: design.name, plural: `${design.name}s` };
+  return {
+    ...WOLF_SCORING,
+    id: design.id,
+    name: design.name,
+    plural: design.plural ?? `${design.name}s`,
+    poseNames: { ...WOLF_SCORING.poseNames, ...design.poseNames },
+  };
 }
 
 const FIT = { scale: 0.88, offset: [0.02, 0, 0] as Vec3 };

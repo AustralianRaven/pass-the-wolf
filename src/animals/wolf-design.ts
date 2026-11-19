@@ -37,6 +37,35 @@ export interface WolfDesign {
   readonly width: number;
   /** Optional density of the head and muzzle (default: carved light, 0.4). */
   readonly headWeight?: number;
+  /**
+   * This animal's own names for the scoring poses (the side poses keep Moon side / Plain side,
+   * since every animal wears the moon mark). Omitted: the wolf's names.
+   */
+  readonly poseNames?: Readonly<Record<'back' | 'upright' | 'noseDown' | 'lean' | 'tailDown', string>>;
+  /** Plural for messages ("Gorillas"); default is the name plus "s". */
+  readonly plural?: string;
+  /** Picker blurb. */
+  readonly blurb?: string;
+  /**
+   * Paint by part group instead of the wolf's coat painter: each vertex takes the colour of its
+   * nearest part's group (the longest matching group prefix), falling back to coat.base.
+   */
+  readonly paint?: GroupPaint;
+  /** The player-colour marker: a collar round the neck (default) or a bow tie at the throat. */
+  readonly marker?: { readonly kind: 'collar'; readonly radius?: number } | { readonly kind: 'bowtie'; readonly at: V3; readonly size?: number };
+  /** Eye colour (default the winter wolf's ice blue). */
+  readonly eyeColour?: string;
+}
+
+export interface GroupPaint {
+  /** Group prefix to colour, e.g. { shell: '#5d6b3a', leg: '#8c8a6a' }. */
+  readonly groups: Readonly<Record<string, string>>;
+  /** How strongly the underside lightens toward coat.under (0 to 1). */
+  readonly belly?: number;
+  /** How strongly the top of the back darkens toward coat.saddle (0 to 1): a silverback, say. */
+  readonly back?: number;
+  /** Only these group prefixes get the belly and back shading (default: all). */
+  readonly shadeGroups?: readonly string[];
 }
 
 interface Leg {

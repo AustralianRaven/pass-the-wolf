@@ -79,8 +79,14 @@ export function createDieMesh(animal: AnimalDefinition, collar: string): THREE.G
 }
 
 export function setCollarColour(group: THREE.Group, colour: string): void {
-  const collar = group.getObjectByName('collar') as THREE.Mesh | undefined;
-  if (collar) (collar.material as THREE.MeshStandardMaterial).color.set(colour);
+  // A collar is one mesh; a bow tie is a group of them. Recolour every mesh under the marker.
+  group.getObjectByName('collar')?.traverse((o) => {
+    if (o instanceof THREE.Mesh) {
+      const m = o.material as THREE.MeshStandardMaterial;
+      m.color.set(colour);
+      m.emissive?.set(colour);
+    }
+  });
 }
 
 /**
