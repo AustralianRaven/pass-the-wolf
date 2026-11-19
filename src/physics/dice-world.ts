@@ -15,8 +15,27 @@ type Collider = RAPIER_NS.Collider;
  */
 export const GRAVITY = -245;
 export const TIMESTEP = 1 / 240;
-/** Arena half-extents (the blanket inside the tray walls). */
-export const ARENA = { halfX: 5.4, halfZ: 3.5, wallHeight: 3 } as const;
+/**
+ * The hexagonal dice tray. Corners point along ±X (toward and away from the thrower);
+ * `radius` is centre to corner, `apothem` centre to the middle of a wall.
+ * halfX / halfZ are the bounding box, for cameras and shadows.
+ */
+const HEX_RADIUS = 4.6;
+export const ARENA = {
+  radius: HEX_RADIUS,
+  apothem: HEX_RADIUS * Math.cos(Math.PI / 6),
+  halfX: HEX_RADIUS,
+  halfZ: HEX_RADIUS * Math.cos(Math.PI / 6),
+  wallHeight: 3,
+} as const;
+
+/** The six tray walls as centre, half-length and heading (radians about +Y). */
+export function hexWalls(): { x: number; z: number; halfLength: number; heading: number }[] {
+  return Array.from({ length: 6 }, (_, k) => {
+    const a = (Math.PI / 3) * k + Math.PI / 6;
+    return { x: Math.cos(a) * ARENA.apothem, z: Math.sin(a) * ARENA.apothem, halfLength: ARENA.radius / 2, heading: a };
+  });
+}
 
 const WOOD = { friction: 0.55, restitution: 0.32 };
 const WOOL = { friction: 0.85, restitution: 0.18 };
@@ -28,8 +47,16 @@ const REST_ANGULAR = 0.12;
 const REST_STEPS = 60;
 /** Give up waiting after this many steps (~12 s) and read whatever is there. */
 export const MAX_STEPS = 240 * 12;
-/** Contact gap that still counts as "touching". */
+/** Contact gap that still counts as "touching" for hitboxes (the floor check). */
 const TOUCH_DISTANCE = 0.02;
+/** Gap between the visible models that still counts as touching (0.01 is under half a millimetre). */
+const VISIBLE_GAP = 0.01;
+/**
+ * The Tangled and Alpha rules, recorded with the odds so a stale record is refused:
+ * Tangled when the visible wolves touch; Alpha (the piggyback) when they touch and one is
+ * off the felt entirely, riding its packmate.
+ */
+export const CONTACT_RULE = 'visible-touch; alpha = one off the floor';
 
 export interface ThrowInput {
   /** Launch heading in radians on the table plane; 0 throws toward +X. */
@@ -40,10 +67,29 @@ export interface ThrowInput {
   readonly seed: number;
 }
 
+/** Straight up the table, away from the player's edge. */
+export const AUTO_ANGLE = -Math.PI / 2;
+/**
+ * How far apart the two wolves leave the hand (each sits this far either side of the line of
+ * the throw) and how much their paths fan out. Closer throws tangle and piggyback more often.
+ */
+export const THROW_SPACING = 0.9;
+export const THROW_FAN = 1;
+
+/**
+ * The Auto-roll throw: the one profile the odds are tuned and tested against. The Roll button,
+ * the computer players and the calibration tools all throw this way; only hand throws differ.
+ */
+export function autoRollInput(rng: () => number): Omit<ThrowInput, 'seed'> {
+  return { angle: AUTO_ANGLE + (rng() - 0.5) * 0.3, power: 0.55 + rng() * 0.3 };
+}
+
 export interface SettledDice {
   readonly poses: readonly [GenericPose, GenericPose];
   readonly touching: boolean;
   readonly stacked: boolean;
+  /** The largest share of either die's weight the other die holds up (0 when apart). */
+  readonly support: number;
   /** True when the dice stopped by themselves rather than by timeout. */
   readonly settled: boolean;
   readonly steps: number;
@@ -53,7 +99,30 @@ export interface DieBody {
   readonly body: RigidBody;
   readonly colliders: readonly Collider[];
   readonly animal: AnimalDefinition;
+  /** The visible model's convex pieces, for Tangled and Alpha (absent: the hitbox stands in). */
+  readonly look?: VisiblePart[];
+  /** Body-frame points for the floor snap: hitbox and visible model. */
+  readonly snap?: { readonly hitbox: readonly Vec3[]; readonly visible: readonly Vec3[] };
 }
+
+interface VisiblePart {
+  readonly shape: RAPIER_NS.Shape;
+  readonly centre: Vec3;
+  readonly radius: number;
+}
+
+type Quat = { x: number; y: number; z: number; w: number };
+
+/** Rotate a body-frame point by a unit quaternion. */
+function rotate(q: Quat, p: Vec3): Vec3 {
+  const [x, y, z] = p;
+  const tx = 2 * (q.y * z - q.z * y);
+  const ty = 2 * (q.z * x - q.x * z);
+  const tz = 2 * (q.x * y - q.y * x);
+  return [x + q.w * tx + (q.y * tz - q.z * ty), y + q.w * ty + (q.z * tx - q.x * tz), z + q.w * tz + (q.x * ty - q.y * tx)];
+}
+
+const lowest = (q: Quat, pts: readonly Vec3[]) => pts.reduce((m, p) => Math.min(m, rotate(q, p)[1]), Infinity);
 
 function midpoint(a: Vec3, b: Vec3): Vec3 {
   return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
@@ -131,15 +200,16 @@ export class DiceWorld {
       ground,
     );
     const h = ARENA.wallHeight;
-    const walls: Array<[number, number, number, number, number, number]> = [
-      [ARENA.halfX + 0.25, h / 2, 0, 0.25, h / 2, ARENA.halfZ + 0.5],
-      [-ARENA.halfX - 0.25, h / 2, 0, 0.25, h / 2, ARENA.halfZ + 0.5],
-      [0, h / 2, ARENA.halfZ + 0.25, ARENA.halfX + 0.5, h / 2, 0.25],
-      [0, h / 2, -ARENA.halfZ - 0.25, ARENA.halfX + 0.5, h / 2, 0.25],
-    ];
-    for (const [x, y, z, hx, hy, hz] of walls) {
+    const t = 0.25;
+    for (const w of hexWalls()) {
+      // Thickness runs along the wall's outward normal; length overlaps at the corners.
+      const yaw = -w.heading;
       this.world.createCollider(
-        R.ColliderDesc.cuboid(hx, hy, hz).setTranslation(x, y, z).setFriction(WALL.friction).setRestitution(WALL.restitution),
+        R.ColliderDesc.cuboid(t, h / 2, w.halfLength + 0.3)
+          .setTranslation(w.x + Math.cos(w.heading) * t, h / 2, w.z + Math.sin(w.heading) * t)
+          .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) })
+          .setFriction(WALL.friction)
+          .setRestitution(WALL.restitution),
         ground,
       );
     }
@@ -158,8 +228,21 @@ export class DiceWorld {
         .setAngularDamping(0.25),
     );
     const colliders = animal.parts.map((p) => this.world.createCollider(partCollider(this.R, p), body));
-    return { body, colliders, animal };
+    if (!animal.silhouette) return { body, colliders, animal };
+    const look = animal.silhouette.map((pts): VisiblePart => {
+      const shape = this.R.ColliderDesc.convexHull(new Float32Array(pts.flat()))?.shape;
+      if (!shape) throw new Error('Degenerate silhouette piece.');
+      const centre = pts.reduce<Vec3>((c, p) => [c[0] + p[0] / pts.length, c[1] + p[1] / pts.length, c[2] + p[2] / pts.length], [0, 0, 0]);
+      const radius = Math.max(...pts.map((p) => Math.hypot(p[0] - centre[0], p[1] - centre[1], p[2] - centre[2])));
+      return { shape, centre, radius };
+    });
+    const hitbox = animal.parts.flatMap((p) => (p.kind === 'hull' ? p.points : []));
+    return { body, colliders, animal, look, snap: { hitbox, visible: animal.silhouette.flat() } };
   }
+
+  /** Overridable for calibration experiments (tools/calibrate.ts --spacing= --fan=). */
+  spacing = THROW_SPACING;
+  fan = THROW_FAN;
 
   /** Launch both dice from the thrower's edge. Jitter comes from the seed. */
   throwDice(input: ThrowInput): void {
@@ -169,17 +252,17 @@ export class DiceWorld {
     const dirX = Math.cos(input.angle);
     const dirZ = Math.sin(input.angle);
     // Start behind the centre, opposite the throw direction.
-    const startX = -dirX * (ARENA.halfX - 1.4);
-    const startZ = -dirZ * (ARENA.halfZ - 1.1);
+    const startX = -dirX * (ARENA.radius - 1.6);
+    const startZ = -dirZ * (ARENA.apothem - 1.6);
 
     this.dice.forEach((die, i) => {
-      const offset = (i === 0 ? -1 : 1) * 1.1;
+      const offset = (i === 0 ? -1 : 1) * this.spacing;
       const yaw = rng() * Math.PI * 2;
       const pitch = (rng() - 0.5) * Math.PI;
       const roll = rng() * Math.PI * 2;
       die.body.setTranslation({ x: startX - dirZ * offset, y: 2.2 + rng() * 0.6, z: startZ + dirX * offset }, true);
       die.body.setRotation(eulerToQuat(pitch, yaw, roll), true);
-      const spread = (i === 0 ? -1 : 1) * (0.12 + rng() * 0.25);
+      const spread = (i === 0 ? -1 : 1) * (0.06 + rng() * 0.15) * this.fan;
       const v = speed * (0.9 + rng() * 0.2);
       die.body.setLinvel(
         { x: v * Math.cos(input.angle + spread), y: 6 + rng() * 6, z: v * Math.sin(input.angle + spread) },
@@ -187,6 +270,46 @@ export class DiceWorld {
       );
       const spin = 18 + power * 26;
       die.body.setAngvel({ x: (rng() - 0.5) * spin, y: (rng() - 0.5) * spin, z: (rng() - 0.5) * spin }, true);
+    });
+    this.quietSteps = 0;
+    this.stepCount = 0;
+  }
+
+  /** Pick both dice up: they stop simulating and follow the hand until released. */
+  grab(): void {
+    for (const { body } of this.dice) body.setBodyType(this.R.RigidBodyType.KinematicPositionBased, true);
+  }
+
+  /**
+   * Hold both dice in the hand at a point over the tray (clamped inside the walls), side by
+   * side and turning slowly, so they look carried rather than frozen.
+   */
+  hold(x: number, z: number, t: number): void {
+    const limit = ARENA.apothem - 0.9;
+    const r = Math.hypot(x, z);
+    const k = r > limit ? limit / r : 1;
+    this.dice.forEach(({ body }, i) => {
+      const side = i === 0 ? -1 : 1;
+      body.setTranslation({ x: x * k + side * 0.45, y: 2.1 + Math.sin(t * 3 + i) * 0.08, z: z * k }, true);
+      body.setRotation(eulerToQuat(0.4 * Math.sin(t * 2 + i), t * 0.8 * side, 0.3 * Math.cos(t * 1.7 + i)), true);
+    });
+  }
+
+  /**
+   * Let go: the dice fly with the hand's velocity (clamped to a sane throw), a little seeded
+   * jitter so nobody can aim for a Howl, and spin that grows with speed.
+   */
+  release(velocity: { x: number; z: number }, seed: number): void {
+    const rng = createRng(seed);
+    const speed = Math.min(26, Math.hypot(velocity.x, velocity.z));
+    const heading = Math.atan2(velocity.z, velocity.x);
+    this.dice.forEach(({ body }, i) => {
+      body.setBodyType(this.R.RigidBodyType.Dynamic, true);
+      const spread = (i === 0 ? -1 : 1) * (0.05 + rng() * 0.12);
+      const v = speed * (0.9 + rng() * 0.2);
+      body.setLinvel({ x: v * Math.cos(heading + spread), y: 4 + rng() * 4 + speed * 0.12, z: v * Math.sin(heading + spread) }, true);
+      const spin = 10 + speed * 1.6;
+      body.setAngvel({ x: (rng() - 0.5) * spin, y: (rng() - 0.5) * spin, z: (rng() - 0.5) * spin }, true);
     });
     this.quietSteps = 0;
     this.stepCount = 0;
@@ -237,7 +360,64 @@ export class DiceWorld {
 
   private diceTouch(): boolean {
     const [a, b] = this.dice;
-    return b.colliders.some((c) => this.dieTouchesCollider(a, c));
+    if (!a.look || !b.look) return b.colliders.some((c) => this.dieTouchesCollider(a, c));
+    return this.looksTouch(a, b);
+  }
+
+  /**
+   * Where the visible model sits: the die's pose, lifted or dropped so the model's lowest point
+   * meets the hitbox's lowest point, exactly as the scene draws it.
+   */
+  visiblePose(die: DieBody): { at: Vec3; q: Quat } {
+    const t = die.body.translation();
+    const q = die.body.rotation();
+    const lift = die.snap ? lowest(q, die.snap.hitbox) - lowest(q, die.snap.visible) : 0;
+    return { at: [t.x, t.y + lift, t.z], q };
+  }
+
+  /** True when the two visible models touch (within VISIBLE_GAP). */
+  private looksTouch(a: DieBody, b: DieBody): boolean {
+    const pa = this.visiblePose(a);
+    const pb = this.visiblePose(b);
+    const pos = (p: { at: Vec3 }) => ({ x: p.at[0], y: p.at[1], z: p.at[2] });
+    const centres = (p: { at: Vec3; q: Quat }, parts: readonly VisiblePart[]) =>
+      parts.map((part) => {
+        const c = rotate(p.q, part.centre);
+        return [c[0] + p.at[0], c[1] + p.at[1], c[2] + p.at[2]] as Vec3;
+      });
+    const ca = centres(pa, a.look!);
+    const cb = centres(pb, b.look!);
+    for (let i = 0; i < a.look!.length; i++) {
+      for (let j = 0; j < b.look!.length; j++) {
+        const reach = a.look![i]!.radius + b.look![j]!.radius + VISIBLE_GAP;
+        const [x, y, z] = ca[i]!;
+        const [u, v, w] = cb[j]!;
+        if ((x - u) ** 2 + (y - v) ** 2 + (z - w) ** 2 > reach * reach) continue;
+        const hit = a.look![i]!.shape.contactShape(pos(pa), pa.q, b.look![j]!.shape, pos(pb), pb.q, VISIBLE_GAP);
+        if (hit && hit.distance <= VISIBLE_GAP) return true;
+      }
+    }
+    return false;
+  }
+
+  /** Share of each die's weight the other die holds up, from the last step's contact impulses. */
+  private supportShares(): [number, number] {
+    const [a, b] = this.dice;
+    const weightImpulse = (die: DieBody) => die.body.mass() * -GRAVITY * TIMESTEP;
+    let upOnA = 0;
+    for (const ca of a.colliders) {
+      for (const cb of b.colliders) {
+        this.world.contactPair(ca, cb, (manifold, flipped) => {
+          // The manifold normal points from the first collider to the second.
+          const ny = manifold.normal().y * (flipped ? -1 : 1);
+          let impulse = 0;
+          for (let i = 0; i < manifold.numContacts(); i++) impulse += manifold.contactImpulse(i);
+          // Pushing B up means pushing A down, and the other way round.
+          upOnA += -ny * impulse;
+        });
+      }
+    }
+    return [Math.max(0, upOnA) / weightImpulse(a), Math.max(0, -upOnA) / weightImpulse(b)];
   }
 
   /** Read the current poses and contacts. */
@@ -246,10 +426,13 @@ export class DiceWorld {
     const touching = this.diceTouch();
     const aOnFloor = this.dieTouchesCollider(a, this.floor);
     const bOnFloor = this.dieTouchesCollider(b, this.floor);
+    const support = touching ? Math.max(...this.supportShares()) : 0;
     return {
       poses: [classifyPose(a.body.rotation()), classifyPose(b.body.rotation())],
       touching,
+      // The piggyback: one wolf off the felt entirely, riding its packmate.
       stacked: touching && (!aOnFloor || !bOnFloor),
+      support,
       settled: this.isAtRest(),
       steps: this.stepCount,
     };

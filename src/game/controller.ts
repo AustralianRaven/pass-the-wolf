@@ -1,6 +1,6 @@
 import type RAPIER_NS from '@dimforge/rapier3d-compat';
 import { getAnimal } from '../animals/registry';
-import { DiceWorld, MAX_STEPS, TIMESTEP, type SettledDice, type ThrowInput } from '../physics/dice-world';
+import { DiceWorld, MAX_STEPS, TIMESTEP, autoRollInput, type SettledDice, type ThrowInput } from '../physics/dice-world';
 import { randomSeed } from '../physics/rng';
 import type { TableScene } from '../render/scene';
 import { applyRoll, bank, canBank, newGame, nextTurn, type GameState } from '../rules/game';
@@ -9,10 +9,12 @@ import type { GameView } from '../ui/view';
 import type { DebugFlags } from './debug';
 import { saveSetup, toSeats, type Setup } from './settings';
 
-type Phase = 'setup' | 'ready' | 'tumbling' | 'result' | 'handover' | 'over';
+type Phase = 'setup' | 'ready' | 'holding' | 'tumbling' | 'cutscene' | 'result' | 'handover' | 'over';
 
-const DEFAULT_ANGLE = -Math.PI / 2; // straight away from the player's edge
-const MAX_AIM = (55 * Math.PI) / 180;
+/** Rolls worth this much or more get the zoom-in cutscene (as do Alpha and Tangled). */
+export const CUTSCENE_POINTS = 15;
+const CUTSCENE_MS = 2600;
+
 const CPU_BANK_AT = 20; // placeholder until the CPU personalities land
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -23,13 +25,13 @@ export class GameController {
   private world: DiceWorld | null = null;
   private phase: Phase = 'setup';
   private throwCount = 0;
-  private aimAngle = DEFAULT_ANGLE;
   private accumulator = 0;
   private lastFrame = 0;
   private timers: number[] = [];
   private forced: SettledDice[];
-  private dragStart: { x: number; y: number } | null = null;
-  private chargeStart: number | null = null;
+  /** Recent hand positions on the table while the wolves are held, for the throw velocity. */
+  private handTrail: { t: number; x: number; z: number }[] = [];
+  private hand: { x: number; z: number } = { x: 0, z: 0 };
 
   constructor(
     private readonly R: typeof RAPIER_NS,
@@ -71,7 +73,7 @@ export class GameController {
     if (this.setup) this.view.showSetup(this.setup);
   }
 
-  /** Put the current seat's dice at rest on their edge of the blanket. */
+  /** Put the current seat's dice at rest on their edge of the tray. */
   private prepareDice(): void {
     if (!this.state) return;
     const seat = this.state.seats[this.state.currentSeat]!;
@@ -83,7 +85,6 @@ export class GameController {
     this.world.settle(240);
     this.scene.setDice(animals, this.view.colourOf(this.state.currentSeat));
     this.scene.sync(this.world);
-    this.aimAngle = DEFAULT_ANGLE;
   }
 
   // ---------- turn flow ----------
@@ -126,6 +127,49 @@ export class GameController {
     }
   }
 
+  /** Pick the wolves up from where they lie; they follow the pointer until released. */
+  private grabDice(clientX: number, clientY: number): void {
+    if (!this.world) return;
+    // A press off the felt (a wall, the night sky) still picks the wolves up where they lie.
+    const at = this.scene.pick(clientX, clientY) ?? this.scene.diceCentre();
+    this.world.grab();
+    this.hand = { x: at.x, z: at.z };
+    this.handTrail = [{ t: performance.now(), x: at.x, z: at.z }];
+    this.world.hold(at.x, at.z, performance.now() / 1000);
+    this.scene.sync(this.world);
+    this.view.showResult(null);
+    this.phase = 'holding';
+    this.refresh();
+  }
+
+  private moveHand(clientX: number, clientY: number): void {
+    const at = this.scene.pick(clientX, clientY);
+    if (!at) return;
+    const now = performance.now();
+    this.hand = { x: at.x, z: at.z };
+    this.handTrail.push({ t: now, x: at.x, z: at.z });
+    this.handTrail = this.handTrail.filter((p) => now - p.t < 150);
+  }
+
+  /** Let go: the wolves fly with the hand's speed and direction over the last tenth of a second. */
+  private releaseDice(): void {
+    if (!this.world || this.phase !== 'holding') return;
+    const now = performance.now();
+    const recent = this.handTrail.filter((p) => now - p.t < 110);
+    const first = recent[0] ?? this.handTrail[0];
+    const last = recent.at(-1) ?? first;
+    const dt = first && last ? Math.max(0.016, (last.t - first.t) / 1000) : 1;
+    const velocity = first && last ? { x: (last.x - first.x) / dt, z: (last.z - first.z) / dt } : { x: 0, z: 0 };
+    const seed = this.debug.seed !== null ? this.debug.seed + this.throwCount : randomSeed();
+    this.throwCount++;
+    this.world.release(velocity, seed);
+    this.handTrail = [];
+    this.phase = 'tumbling';
+    this.accumulator = 0;
+    this.refresh();
+    if (this.debug.fast) this.onSettled(this.world.settle());
+  }
+
   private onSettled(physical: SettledDice): void {
     if (!this.state || !this.world) return;
     this.scene.sync(this.world);
@@ -141,6 +185,29 @@ export class GameController {
     });
     this.state = applyRoll(this.state, roll);
     this.view.showResult(roll, seat.name);
+    const big = (!roll.bust && roll.points >= CUTSCENE_POINTS) || roll.kind === 'alpha' || roll.kind === 'tangled';
+    if (big && !this.debug.fast) {
+      this.phase = 'cutscene';
+      this.refresh();
+      const still = reduceMotion();
+      this.scene.focusOn(this.scene.diceCentre(), still ? 1 : 900);
+      void this.view.playCutscene(roll, CUTSCENE_MS).then(() => {
+        this.scene.focusOn(null, still ? 1 : 700);
+        this.afterResult(roll);
+      });
+      return;
+    }
+    this.afterResult(roll);
+  }
+
+  /** Carry on once the result has been shown (and its cutscene, if any, has finished). */
+  private afterResult(roll: RollResult): void {
+    if (roll.winsGame) {
+      this.phase = 'result';
+      this.refresh();
+      this.later(() => this.toHandover(roll), 1500);
+      return;
+    }
     if (roll.bust) {
       this.phase = 'result';
       this.refresh();
@@ -161,6 +228,7 @@ export class GameController {
     this.toHandover(null, pot);
   }
 
+  /** `bust` is the roll that ended the turn without a bank: a bust, or the Alpha's instant win. */
   private toHandover(bust: RollResult | null, banked = 0): void {
     if (!this.state) return;
     const state = this.state;
@@ -169,7 +237,8 @@ export class GameController {
     this.refresh();
     const last = state.history.at(-1);
     let summary: string;
-    if (bust?.kind === 'tangled') summary = `Tangled! ${seat.name} loses ${last?.lost ?? 0} and drops to 0.`;
+    if (bust?.kind === 'alpha') summary = `Alpha! ${seat.name} rides one wolf on the other to an instant win.`;
+    else if (bust?.kind === 'tangled') summary = `Tangled! ${seat.name} loses ${last?.lost ?? 0} and drops to 0.`;
     else if (bust) summary = `Scattered. ${seat.name} loses ${last?.lost ?? 0} from the pot.`;
     else summary = `${seat.name} banks ${banked}, now on ${state.scores[state.currentSeat]}.`;
 
@@ -195,8 +264,8 @@ export class GameController {
 
   private cpuThrow(): void {
     if (this.humanTurn || this.phase === 'tumbling') return;
-    const angle = DEFAULT_ANGLE + (Math.random() - 0.5) * 0.7;
-    this.throwDice({ angle, power: 0.45 + Math.random() * 0.5 });
+    // Computer seats auto-roll, so they throw with the same calibrated odds as the button.
+    this.throwDice(autoRollInput(Math.random));
   }
 
   private cpuDecide(): void {
@@ -223,7 +292,10 @@ export class GameController {
       this.scene.sync(this.world);
       if (rested) this.onSettled(this.world.read());
     }
-    this.updateCharge(now);
+    if (this.phase === 'holding' && this.world) {
+      this.world.hold(this.hand.x, this.hand.z, now / 1000);
+      this.scene.sync(this.world);
+    }
     this.scene.render();
     requestAnimationFrame(this.frame);
   };
@@ -238,29 +310,15 @@ export class GameController {
     const canvas = this.scene.canvas;
     canvas.addEventListener('pointerdown', (e) => {
       if (!this.canThrowNow()) return;
-      this.dragStart = { x: e.clientX, y: e.clientY };
       canvas.setPointerCapture(e.pointerId);
+      // Any press on the tray picks both wolves up: hold, shake and let go to throw.
+      this.grabDice(e.clientX, e.clientY);
     });
     canvas.addEventListener('pointermove', (e) => {
-      if (!this.dragStart) return;
-      const aim = this.dragAim(e.clientX, e.clientY);
-      const from = this.scene.pick(this.dragStart.x, this.dragStart.y);
-      if (!aim || !from) return this.scene.showAim(null);
-      const len = 2 + aim.power * 6;
-      this.scene.showAimFrom(from, aim.angle, len);
+      if (this.phase === 'holding') this.moveHand(e.clientX, e.clientY);
     });
-    const release = (e: PointerEvent) => {
-      if (!this.dragStart) return;
-      const aim = this.dragAim(e.clientX, e.clientY);
-      this.dragStart = null;
-      this.scene.showAim(null);
-      if (aim) this.throwDice(aim);
-    };
-    canvas.addEventListener('pointerup', release);
-    canvas.addEventListener('pointercancel', () => {
-      this.dragStart = null;
-      this.scene.showAim(null);
-    });
+    canvas.addEventListener('pointerup', () => this.releaseDice());
+    canvas.addEventListener('pointercancel', () => this.releaseDice());
 
     window.addEventListener('keydown', (e) => {
       if (this.phase === 'setup' || e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
@@ -273,24 +331,10 @@ export class GameController {
         if (e.target instanceof HTMLButtonElement) return; // let buttons activate normally
         e.preventDefault();
         if (this.phase === 'handover' && this.humanNext()) this.takeTurn();
-        else if (this.canThrowNow() && this.chargeStart === null && !e.repeat) this.chargeStart = performance.now();
+        else if (!e.repeat) this.rollButton(); // one press, one Auto-roll
         return;
       }
       if (e.key === 'b' || e.key === 'B') this.bank();
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        if (!this.canThrowNow()) return;
-        e.preventDefault();
-        const delta = (e.key === 'ArrowLeft' ? -1 : 1) * (6 * Math.PI) / 180;
-        this.aimAngle = Math.max(DEFAULT_ANGLE - MAX_AIM, Math.min(DEFAULT_ANGLE + MAX_AIM, this.aimAngle + delta));
-        this.view.announce(`Aim ${Math.round(((this.aimAngle - DEFAULT_ANGLE) * 180) / Math.PI)} degrees`);
-      }
-    });
-    window.addEventListener('keyup', (e) => {
-      if (e.code !== 'Space' || this.chargeStart === null) return;
-      const held = (performance.now() - this.chargeStart) / 1000;
-      this.chargeStart = null;
-      this.scene.showAim(null);
-      this.throwDice({ angle: this.aimAngle, power: Math.min(1, 0.25 + held / 1.2) });
     });
     window.addEventListener('resize', () => this.scene.resize());
   }
@@ -300,28 +344,6 @@ export class GameController {
     if (this.state.phase === 'awaitingRoll') return this.humanTurn; // first turn of the game
     const next = this.state.seats[(this.state.currentSeat + 1) % this.state.seats.length]!;
     return next.kind === 'human';
-  }
-
-  /** Charge meter while Space is held: shown as the aim line growing. */
-  private updateCharge(now: number): void {
-    if (this.chargeStart === null) return;
-    const power = Math.min(1, 0.25 + (now - this.chargeStart) / 1200);
-    const from = this.scene.pick(window.innerWidth / 2, window.innerHeight * 0.72);
-    if (!from) return;
-    const len = 2 + power * 6;
-    this.scene.showAimFrom(from, this.aimAngle, len);
-  }
-
-  /** Convert a drag to a throw: drag away from yourself to throw, length sets power. */
-  private dragAim(x: number, y: number): { angle: number; power: number } | null {
-    if (!this.dragStart) return null;
-    const dx = x - this.dragStart.x;
-    const dy = y - this.dragStart.y;
-    const len = Math.hypot(dx, dy);
-    if (len < 24 || dy > -8) return null; // too short, or dragged toward the player
-    const angle = Math.atan2(dy, dx);
-    const clamped = Math.max(DEFAULT_ANGLE - MAX_AIM, Math.min(DEFAULT_ANGLE + MAX_AIM, angle));
-    return { angle: clamped, power: Math.min(1, len / 260) };
   }
 
   // ---------- helpers ----------
@@ -334,8 +356,9 @@ export class GameController {
     const awaiting = this.state.phase === 'awaitingRoll';
     let hint = '';
     if (this.phase === 'tumbling') hint = 'Tumbling…';
+    else if (this.phase === 'holding') hint = 'Flick and let go to throw.';
     else if (ready && awaiting && human) {
-      hint = this.state.turnPot > 0 ? 'Roll again, or bank what you have.' : 'Drag up on the blanket to throw, or hold Space.';
+      hint = this.state.turnPot > 0 ? 'Roll again, or bank what you have.' : 'Grab the wolves and fling them, or press Auto-roll.';
     } else if (ready && !human) hint = `${this.seat?.name} is thinking…`;
     this.view.update(this.state, {
       canRoll: human && ready && awaiting,
@@ -345,10 +368,10 @@ export class GameController {
     });
   }
 
-  /** Roll button: a standard throw straight up the table with a little variety. */
+  /** Auto-roll button: the calibrated throw profile, so its odds match the target table. */
   rollButton(): void {
     if (!this.canThrowNow()) return;
-    this.throwDice({ angle: this.aimAngle + (Math.random() - 0.5) * 0.3, power: 0.55 + Math.random() * 0.3 });
+    this.throwDice(autoRollInput(Math.random));
   }
 
   private later(fn: () => void, ms: number): void {

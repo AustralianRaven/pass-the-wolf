@@ -1,9 +1,9 @@
-import type { DirewolfDesign } from '../animals/direwolves';
+import type { WolfDesign } from '../animals/wolf-design';
 import { noise3, sculptDistance, type Sculpt } from './sdf';
 import { surfaceNets } from './surface-nets';
 
 /**
- * Sculpts and paints a direwolf into plain typed arrays. No three.js here, so it runs in a
+ * Sculpts and paints a wolf into plain typed arrays. No three.js here, so it runs in a
  * Web Worker and the page never freezes while a wolf is being carved.
  */
 export interface WolfArrays {
@@ -45,7 +45,7 @@ function inMoon(dx: number, dy: number, r: number): number {
   return smooth(r, r * 0.88, outer) * smooth(r * 0.72, r * 0.84, inner);
 }
 
-export function sculptWolfArrays(design: DirewolfDesign, step: number): WolfArrays {
+export function sculptWolfArrays(design: WolfDesign, step: number): WolfArrays {
   const sculpt: Sculpt = { parts: design.parts, fur: design.fur, blend: 0.05 };
   const w = design.width;
   const sdf = (x: number, y: number, z: number) => sculptDistance(sculpt, x, y, z / w);

@@ -18,6 +18,7 @@ const BANDS: Record<GenericPose | 'sides', [number, number]> = {
   back: [6, 21],
   upright: [4, 16],
   noseDown: [0.3, 6],
+  lean: [0, 3],
   tailDown: [0, 2.5],
 };
 

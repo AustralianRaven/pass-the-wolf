@@ -54,7 +54,8 @@ test.describe('Feature: setting up a table', () => {
 
 test.describe('Feature: rolling and banking', () => {
   const rolls = [
-    { force: 'tailDown/sideMarkUp', label: 'Howl', points: 20 },
+    { force: 'tailDown/sideMarkUp', label: 'Howl', points: 25 },
+    { force: 'lean/sideMarkDown', label: 'Pounce', points: 15 },
     { force: 'noseDown/noseDown', label: 'Double Sniff', points: 40 },
     { force: 'back/upright', label: 'Play Dead + Prowl', points: 10 },
     { force: 'sideMarkUp/sideMarkUp', label: 'Den', points: 1 },
@@ -89,19 +90,19 @@ test.describe('Feature: busting', () => {
     await expect(page.getByRole('heading', { name: "Ash's turn" }), 'Then Ash is up next').toBeVisible();
   });
 
-  test('Scenario: Given Kat has 20 banked, When the wolves end Tangled, Then her bank is wiped to 0', async ({ page }) => {
+  test('Scenario: Given Kat has 25 banked, When the wolves end Tangled, Then her bank is wiped to 0', async ({ page }) => {
     await open(page, ['tailDown/sideMarkUp', 'sideMarkUp/sideMarkUp', 'tangled']);
     await startTable(page, ['Kat', 'Ash']);
     await takeWolves(page, 'Kat');
     await page.getByRole('button', { name: 'Roll' }).click();
-    await page.getByRole('button', { name: 'Bank 20' }).click();
+    await page.getByRole('button', { name: 'Bank 25' }).click();
     await takeWolves(page, 'Ash');
     await page.getByRole('button', { name: 'Roll' }).click();
     await page.getByRole('button', { name: 'Bank 1' }).click();
     await takeWolves(page, 'Kat');
     await page.getByRole('button', { name: 'Roll' }).click();
-    await expect(page.locator('.handover__summary'), 'Then the band reports the tangle').toHaveText('Tangled! Kat loses 20 and drops to 0.');
-    await expect(page.getByRole('img', { name: /Kat 0, Ash 1/ }), 'Then the pegboard shows Kat back at 0').toBeVisible();
+    await expect(page.locator('.handover__summary'), 'Then the band reports the tangle').toHaveText('Tangled! Kat loses 25 and drops to 0.');
+    await expect(page.getByRole('img', { name: /Kat 0, Ash 1/ }), 'Then the trail shows Kat back at 0').toBeVisible();
   });
 });
 
@@ -111,9 +112,9 @@ test.describe('Feature: winning', () => {
     await startTable(page, ['Kat', 'Ash'], 'First to 50');
     await takeWolves(page, 'Kat');
     await page.getByRole('button', { name: 'Roll' }).click();
-    await page.getByRole('button', { name: 'Bank 80' }).click();
+    await page.getByRole('button', { name: 'Bank 100' }).click();
     await expect(page.getByRole('heading', { name: 'Kat wins!' }), 'Then Kat is declared the winner').toBeVisible();
-    await expect(page.locator('.handover .card__total.is-winner'), 'Then the final score card marks 80').toHaveText('80');
+    await expect(page.locator('.handover .card__total.is-winner'), 'Then the final score card marks 100').toHaveText('100');
   });
 
   test('Scenario: Given solo play against the computer, When the computer banks past the target, Then the computer wins', async ({ page }) => {
@@ -137,35 +138,34 @@ test.describe('Feature: keyboard play', () => {
     await page.keyboard.press('Space');
     await expect(handover(page), 'Then Space takes the wolves').toBeHidden();
     await page.locator('body').focus();
-    await page.keyboard.down('Space');
-    await page.waitForTimeout(150);
-    await page.keyboard.up('Space');
-    await expect(pot(page), 'Then holding and releasing Space throws for a Sniff').toHaveText('10');
+    await page.keyboard.press('Space');
+    await expect(pot(page), 'Then one press of Space auto-rolls for a Sniff').toHaveText('10');
     await page.keyboard.press('b');
     await expect(page.getByRole('heading', { name: "Ash's turn" }), 'Then B banks and passes the wolves').toBeVisible();
   });
 });
 
 test.describe('Feature: choosing wolves', () => {
-  test('Scenario: Given Kat picks Frostmane and Stalker, When she takes her turn, Then her plate shows that pair', async ({ page }) => {
+  test('Scenario: Given the setup sheet, When Kat opens the wolf picker, Then Winter Wolf is choosable and the next wolf is coming soon', async ({ page }) => {
     await open(page, []);
-    await page.getByText('Table', { exact: true }).click();
-    await page.getByLabel('Seat 1 name').fill('Kat');
-    await page.getByLabel('Seat 1 die 1').selectOption({ label: 'Frostmane' });
-    await expect(page.getByLabel('Seat 1 die 1'), 'Then die 1 is Frostmane').toHaveValue('frostmane');
-    await page.getByLabel('Seat 1 die 2').selectOption({ label: 'Stalker' });
-    await expect(page.getByLabel('Seat 1 die 2'), 'Then die 2 is Stalker').toHaveValue('stalker');
-    await page.getByRole('button', { name: 'Deal the wolves' }).click();
-    await takeWolves(page, 'Kat');
-    await expect(page.locator('.plate__dice'), 'Then the plate names the mixed pair').toHaveText('Frostmane + Stalker');
+    await page.getByRole('button', { name: /Seat 1 wolf/ }).click();
+    const den = page.getByRole('dialog', { name: /pick your wolf/ });
+    await expect(den, 'Then the wolf picker opens').toBeVisible();
+    await expect(den.getByRole('button', { name: 'Previous wolf' }), 'Then the first card has nothing before it').toBeDisabled();
+    await expect(den.getByRole('button', { name: 'Choose' }), 'Then Winter Wolf can be chosen').toBeEnabled();
+    await den.getByRole('button', { name: 'Next wolf' }).click();
+    await expect(den.locator('.wolfcard.is-focus'), 'Then the next card is the coming soon wolf').toContainText('Coming soon');
+    await expect(den.locator('.wolfcard.is-focus').getByRole('button', { name: 'Locked' }), 'Then the coming soon wolf is locked').toBeDisabled();
+    await den.getByRole('button', { name: 'Previous wolf' }).click();
+    await den.getByRole('button', { name: 'Choose' }).click();
+    await expect(den, 'Then choosing closes the picker').toBeHidden();
+    await expect(page.getByRole('button', { name: /Seat 1 wolf: Winter Wolf/ }), 'Then seat 1 throws the Winter Wolf').toBeVisible();
   });
 
-  test('Scenario: Given the setup sheet, When Kat opens Meet the pack, Then every wolf shows its strategy line', async ({ page }) => {
+  test('Scenario: Given two seats, When Kat picks Glacier for seat 1, Then seat 2 cannot take Glacier', async ({ page }) => {
     await open(page, []);
-    await page.getByText('Meet the pack: how each wolf tumbles').click();
-    for (const name of ['Warden', 'Stalker', 'Frostmane', 'Timber Runner', 'Old Grizzle']) {
-      await expect(page.locator('.pack__name', { hasText: name }), `Then ${name} is listed`).toBeVisible();
-    }
-    await expect(page.locator('.pack__traits').nth(2), 'Then Frostmane shows its Howl edge').toContainText('Howl');
+    await page.getByRole('radiogroup', { name: 'Seat 1 collar colour' }).getByRole('radio', { name: 'Glacier' }).check();
+    await expect(page.getByRole('radiogroup', { name: 'Seat 1 collar colour' }).getByRole('radio', { name: 'Glacier' }), 'Then seat 1 wears Glacier').toBeChecked();
+    await expect(page.getByRole('radiogroup', { name: 'Seat 2 collar colour' }).getByRole('radio', { name: 'Glacier' }), 'Then Glacier is taken for seat 2').toBeDisabled();
   });
 });

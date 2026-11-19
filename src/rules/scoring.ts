@@ -1,5 +1,5 @@
 import type { AnimalScoring } from './animal';
-import { ALPHA_POINTS, DEN_POINTS, DOUBLE_MULTIPLIER } from './constants';
+import { DEN_POINTS, DOUBLE_MULTIPLIER } from './constants';
 import { isSidePose, type GenericPose, type ScoringPose } from './poses';
 
 export interface DieResult {
@@ -27,20 +27,24 @@ export interface RollResult {
   readonly bust: boolean;
   /** Also wipes the player's banked score. */
   readonly wipesBank: boolean;
+  /** Ends the game on the spot: the Alpha (one wolf riding the other) is an instant win. */
+  readonly winsGame: boolean;
 }
 
-const result = (kind: RollKind, points: number, label: string, bust = false, wipesBank = false): RollResult => ({
+const result = (kind: RollKind, points: number, label: string, bust = false, wipesBank = false, winsGame = false): RollResult => ({
   kind,
   points,
   label,
   bust,
   wipesBank,
+  winsGame,
 });
 
 export function scoreRoll(outcome: RollOutcome): RollResult {
   const [a, b] = outcome.dice;
 
-  if (outcome.stacked) return result('alpha', ALPHA_POINTS, 'Alpha');
+  // The piggyback is close to impossible on a real throw, so landing it wins outright.
+  if (outcome.stacked) return result('alpha', 0, 'Alpha', false, false, true);
   if (outcome.touching) return result('tangled', 0, 'Tangled', true, true);
 
   const aSide = isSidePose(a.pose);

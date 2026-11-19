@@ -15,9 +15,10 @@ export const TEST_SHEEP: AnimalScoring = {
     back: 'Legs Up',
     upright: 'Graze',
     noseDown: 'Nibble',
+    lean: 'Headbutt',
     tailDown: 'Woolpack',
   },
-  points: { back: 4, upright: 6, noseDown: 12, tailDown: 20 },
+  points: { back: 4, upright: 6, noseDown: 12, lean: 16, tailDown: 20 },
 };
 
 export const wolf = WOLF_SCORING;
@@ -52,6 +53,8 @@ export const points = (p: number, label = `+${p}`): RollResult => ({
   label,
   bust: false,
   wipesBank: false,
+  winsGame: false,
 });
-export const scattered: RollResult = { kind: 'scattered', points: 0, label: 'Scattered', bust: true, wipesBank: false };
-export const tangled: RollResult = { kind: 'tangled', points: 0, label: 'Tangled', bust: true, wipesBank: true };
+export const scattered: RollResult = { kind: 'scattered', points: 0, label: 'Scattered', bust: true, wipesBank: false, winsGame: false };
+export const tangled: RollResult = { kind: 'tangled', points: 0, label: 'Tangled', bust: true, wipesBank: true, winsGame: false };
+export const alpha: RollResult = { kind: 'alpha', points: 0, label: 'Alpha', bust: false, wipesBank: false, winsGame: true };

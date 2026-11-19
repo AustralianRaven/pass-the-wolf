@@ -48,6 +48,8 @@ export function createDieMesh(animal: AnimalDefinition, collar: string): THREE.G
   const wood = new THREE.MeshStandardMaterial({ color: animal.palette.body, roughness: 0.62, metalness: 0, flatShading: true });
   const accent = new THREE.MeshStandardMaterial({ color: animal.palette.accent, roughness: 0.8, flatShading: true });
   animal.parts.forEach((part, i) => {
+    // Hitbox-only pads (the hidden pig belly, spine pad, rump seat) are never drawn.
+    if (part.kind === 'hull' && part.invisible) return;
     // Ears (the small boxes high on the head) and the snout tip take the accent stain.
     const isAccent = part.kind === 'box' && part.at[1] > 0.6 && i > 0;
     const mesh = partMesh(part, isAccent ? accent : wood);
@@ -79,4 +81,21 @@ export function createDieMesh(animal: AnimalDefinition, collar: string): THREE.G
 export function setCollarColour(group: THREE.Group, colour: string): void {
   const collar = group.getObjectByName('collar') as THREE.Mesh | undefined;
   if (collar) (collar.material as THREE.MeshStandardMaterial).color.set(colour);
+}
+
+/**
+ * The real physics hitbox as a wireframe: every collider part, including the invisible pads
+ * (pig belly, roof, stance, rump seat) the player normally never sees. For the debug view.
+ */
+export function createHitboxMesh(animal: AnimalDefinition): THREE.Group {
+  const shown = new THREE.MeshBasicMaterial({ color: '#9fd3f2', wireframe: true, transparent: true, opacity: 0.55 });
+  const hidden = new THREE.MeshBasicMaterial({ color: '#e8c46a', wireframe: true, transparent: true, opacity: 0.7 });
+  const group = new THREE.Group();
+  group.name = 'hitbox';
+  for (const part of animal.parts) {
+    const mesh = partMesh(part, part.kind === 'hull' && part.invisible ? hidden : shown);
+    mesh.renderOrder = 10;
+    group.add(mesh);
+  }
+  return group;
 }

@@ -2,22 +2,47 @@
  * Headless calibration: throws a pair of animal dice many times with real physics
  * and prints how often each pose and pair result comes up.
  *
- *   npm run calibrate -- [throws=20000] [animalA=wolf] [animalB=animalA] [--json]
+ *   npm run calibrate -- [throws=20000] [animalA=winter] [animalB=animalA] [--json]
  */
+import { writeFileSync } from 'node:fs';
+import { constants, setPriority } from 'node:os';
 import { getAnimal } from '../src/animals/registry';
-import { DiceWorld, loadRapier } from '../src/physics/dice-world';
+import { PIG_TUNE, pigHitbox, type PigTune } from '../src/animals/pig-hitbox';
+import { localUp } from '../src/physics/classify';
+import { DiceWorld, autoRollInput, loadRapier } from '../src/physics/dice-world';
 import { createRng } from '../src/physics/rng';
 import { GENERIC_POSES, type GenericPose } from '../src/rules/poses';
 import { scoreRoll, type RollKind } from '../src/rules/scoring';
 
+// Long runs stay out of the way of whatever else the machine is doing.
+try {
+  setPriority(constants.priority.PRIORITY_BELOW_NORMAL);
+} catch {
+  /* not permitted: run at normal priority */
+}
+
+const tuneArg = process.argv.find((a) => a.startsWith('--tune='));
+const spacingArg = process.argv.find((a) => a.startsWith('--spacing='));
+const fanArg = process.argv.find((a) => a.startsWith('--fan='));
+/** --dump=file writes every throw's resting up-vectors and contacts, for re-classifying offline. */
+const dumpArg = process.argv.find((a) => a.startsWith('--dump='));
+const dump: { up: number[][]; y: number[]; touching: boolean; stacked: boolean; support: number }[] = [];
+const tune = tuneArg ? (JSON.parse(tuneArg.slice('--tune='.length)) as Record<string, number>) : null;
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const asJson = process.argv.includes('--json');
 const throws = Number(args[0] ?? 20000);
-const animalA = getAnimal(args[1] ?? 'wolf');
-const animalB = getAnimal(args[2] ?? args[1] ?? 'wolf');
+/** --tune='{"seat":0.04}' rebuilds the shared pig hitbox with that tuning, without editing the source. */
+const die = (id: string) => {
+  const animal = getAnimal(id);
+  return tune ? { ...animal, parts: pigHitbox({ ...PIG_TUNE, ...(tune as Partial<PigTune>) }) } : animal;
+};
+const animalA = die(args[1] ?? 'winter');
+const animalB = die(args[2] ?? args[1] ?? 'winter');
 
 const R = await loadRapier();
-const rng = createRng(20261113);
+/** --seed=n runs an independent batch, so several processes can share one big calibration. */
+const seedArg = process.argv.find((a) => a.startsWith('--seed='));
+const rng = createRng(seedArg ? Number(seedArg.slice(7)) : 20261113);
 const poseCounts = new Map<GenericPose, number>(GENERIC_POSES.map((p) => [p, 0]));
 const kindCounts = new Map<RollKind, number>();
 let unsettled = 0;
@@ -28,8 +53,19 @@ const started = Date.now();
 for (let i = 0; i < throws; i++) {
   // A fresh world per throw keeps each throw independent and deterministic.
   const world = new DiceWorld(R, [animalA, animalB]);
-  world.throwDice({ angle: (rng() - 0.5) * 0.8, power: 0.3 + rng() * 0.7, seed: Math.floor(rng() * 2 ** 32) });
+  if (spacingArg) world.spacing = Number(spacingArg.slice('--spacing='.length));
+  if (fanArg) world.fan = Number(fanArg.slice('--fan='.length));
+  world.throwDice({ ...autoRollInput(rng), seed: Math.floor(rng() * 2 ** 32) });
   const settled = world.settle();
+  if (dumpArg) {
+    dump.push({
+      up: world.dice.map((d) => localUp(d.body.rotation()).map((v) => Number(v.toFixed(4)))),
+      y: world.dice.map((d) => Number(d.body.translation().y.toFixed(4))),
+      touching: settled.touching,
+      stacked: settled.stacked,
+      support: Number(settled.support.toFixed(3)),
+    });
+  }
   world.free();
   if (!settled.settled) unsettled++;
   totalSteps += settled.steps;
@@ -58,6 +94,8 @@ const report = {
   resultPct: Object.fromEntries([...kindCounts].sort((a, b) => b[1] - a[1]).map(([k, n]) => [k, pct(n, throws)])),
   avgPointsPerRoll: Number((totalPoints / throws).toFixed(2)),
 };
+
+if (dumpArg) writeFileSync(dumpArg.slice('--dump='.length), JSON.stringify({ tune, throws, dump }));
 
 if (asJson) {
   console.log(JSON.stringify(report, null, 2));

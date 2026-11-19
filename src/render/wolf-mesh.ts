@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import type { DirewolfDesign } from '../animals/direwolves';
+import type { WolfDesign } from '../animals/wolf-design';
 import { sculptWolfArrays, type WolfArrays } from '../sculpt/paint-wolf';
+import { Wobble, skinWolfGeometry } from './wobble';
 
-export interface DirewolfMeshOptions {
+export interface WolfMeshOptions {
   /** Grid step: smaller is more detailed and slower. */
   readonly step?: number;
   /** Seat colour for a painted collar; omitted, no collar. */
@@ -11,6 +12,8 @@ export interface DirewolfMeshOptions {
   readonly async?: boolean;
   /** Shown until the carved body arrives (async only). */
   readonly placeholder?: THREE.Object3D;
+  /** Rig the tail, ears and legs to flop (render only). The group's userData.wobble drives it. */
+  readonly wobble?: boolean;
 }
 
 const geometryCache = new Map<string, THREE.BufferGeometry>();
@@ -29,7 +32,18 @@ function pump(): void {
   worker.postMessage(job);
 }
 
-const keyOf = (design: DirewolfDesign, step: number) => `${design.id}@${step}`;
+const keyOf = (design: WolfDesign, step: number) => `${design.id}@${step}`;
+
+/** A body with no vertices yet, but every attribute a skinned mesh reads, until the carving lands. */
+function emptyGeometry(): THREE.BufferGeometry {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute([], 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute([], 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute([], 3));
+  g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute([], 4));
+  g.setAttribute('skinWeight', new THREE.Float32BufferAttribute([], 4));
+  return g;
+}
 
 function toGeometry(a: WolfArrays): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();
@@ -41,7 +55,7 @@ function toGeometry(a: WolfArrays): THREE.BufferGeometry {
 }
 
 /** Sculpt (or reuse) the painted body geometry on the main thread. Fine for the gallery page. */
-export function direwolfGeometry(design: DirewolfDesign, step: number): THREE.BufferGeometry {
+export function wolfGeometry(design: WolfDesign, step: number): THREE.BufferGeometry {
   const key = keyOf(design, step);
   let g = geometryCache.get(key);
   if (!g) {
@@ -52,7 +66,7 @@ export function direwolfGeometry(design: DirewolfDesign, step: number): THREE.Bu
 }
 
 /** Sculpt in a Web Worker so the game never freezes; resolves from cache when already carved. */
-export function requestDirewolfGeometry(design: DirewolfDesign, step: number, urgent = false): Promise<THREE.BufferGeometry> {
+export function requestWolfGeometry(design: WolfDesign, step: number, urgent = false): Promise<THREE.BufferGeometry> {
   const key = keyOf(design, step);
   const cached = geometryCache.get(key);
   if (cached) return Promise.resolve(cached);
@@ -83,44 +97,60 @@ export function requestDirewolfGeometry(design: DirewolfDesign, step: number, ur
 }
 
 /**
- * A painted direwolf: coat, moon mark on the +Z flank, amber eyes and an optional seat-coloured
+ * A painted wolf: coat, moon mark on the +Z flank, amber eyes and an optional seat-coloured
  * collar. Width is stretched by design.width to match the physics collider.
  */
-export function createDirewolfMesh(design: DirewolfDesign, opts: DirewolfMeshOptions = {}): THREE.Group {
+export function createWolfMesh(design: WolfDesign, opts: WolfMeshOptions = {}): THREE.Group {
   const step = opts.step ?? 0.0105;
   const w = design.width;
   const key = keyOf(design, step);
   const ready = geometryCache.get(key);
-  const geometry = ready ?? (opts.async ? new THREE.BufferGeometry() : direwolfGeometry(design, step));
-  const body = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 }));
+  const geometry = ready ?? (opts.async ? emptyGeometry() : wolfGeometry(design, step));
+  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0 });
+  const wobble = opts.wobble ? new Wobble(design) : null;
+  if (wobble) skinWolfGeometry(geometry, design);
+  const body = wobble ? new THREE.SkinnedMesh(geometry, material) : new THREE.Mesh(geometry, material);
+  if (body instanceof THREE.SkinnedMesh && wobble) {
+    body.add(wobble.root);
+    body.bind(new THREE.Skeleton(wobble.bones));
+    // Skinned vertices move outside the rest bounds; don't let culling clip a flopping tail.
+    body.frustumCulled = false;
+  }
   body.castShadow = true;
   body.receiveShadow = true;
   const group = new THREE.Group();
   group.add(body);
+  if (wobble) group.userData.wobble = wobble;
   if (opts.async && !ready) {
     if (opts.placeholder) group.add(opts.placeholder);
-    void requestDirewolfGeometry(design, step, true).then((g) => {
+    void requestWolfGeometry(design, step, true).then((g) => {
+      if (wobble) skinWolfGeometry(g, design);
       body.geometry = g;
       if (opts.placeholder) group.remove(opts.placeholder);
     });
   }
-  const eyeMaterial = new THREE.MeshStandardMaterial({ color: '#f2b233', emissive: '#c77a10', emissiveIntensity: 0.9, roughness: 0.2 });
+  // Eyes are set into the face, not stuck on it: small, flattened against the skull and pushed
+  // half their depth into the fur, with a soft ice-blue glint.
+  const eyeMaterial = new THREE.MeshStandardMaterial({ color: '#9fd3f2', emissive: '#3a7fb0', emissiveIntensity: 0.35, roughness: 0.2 });
+  const pupilMaterial = new THREE.MeshBasicMaterial({ color: '#0d0a08' });
   for (const e of design.eyes) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.017, 12, 8), eyeMaterial);
-    eye.position.set(e[0], e[1], e[2] * w);
-    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), new THREE.MeshBasicMaterial({ color: '#0d0a08' }));
-    pupil.position.set(0.01, 0, Math.sign(e[2]) * 0.009);
+    const side = Math.sign(e[2]);
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.019, 14, 10), eyeMaterial);
+    eye.scale.set(1.2, 0.8, 0.55);
+    eye.position.set(e[0] - 0.002, e[1], e[2] * w - side * 0.005);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.0065, 8, 6), pupilMaterial);
+    pupil.position.set(0.006, 0, side * 0.016);
     eye.add(pupil);
     group.add(eye);
   }
 
   if (opts.collar) {
     const [a, b] = design.neck;
-    const at = new THREE.Vector3(a[0] + (b[0] - a[0]) * 0.3, a[1] + (b[1] - a[1]) * 0.3, 0);
+    const at = new THREE.Vector3(a[0] + (b[0] - a[0]) * 0.55, a[1] + (b[1] - a[1]) * 0.55, 0);
     const dir = new THREE.Vector3(b[0] - a[0], b[1] - a[1], 0).normalize();
     const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.13, 0.022, 8, 24),
-      new THREE.MeshStandardMaterial({ color: opts.collar, roughness: 0.45 }),
+      new THREE.TorusGeometry(0.128, 0.032, 10, 32),
+      new THREE.MeshStandardMaterial({ color: opts.collar, roughness: 0.35, emissive: opts.collar, emissiveIntensity: 0.25 }),
     );
     collar.name = 'collar';
     collar.position.copy(at);

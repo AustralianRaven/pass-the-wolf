@@ -1,5 +1,87 @@
 # Calibration
 
+## Status (2026-11-19): on target
+
+Every animal is **display-only** and rolls on one shared, invisible **pig hitbox**
+(`src/animals/pig-hitbox.ts`, tuning in `PIG_TUNE`). A new animal is a visible model plus a `fit`
+(scale and offset); it inherits the pig's odds with no physics work. The visible model is lifted or
+dropped each frame so its lowest point matches the hitbox's. Settings → Debug mode → Show hitboxes
+draws the pig in gold.
+
+The odds are measured on the **Auto-roll** throw only (`autoRollInput` in `dice-world.ts`): the
+Auto-roll button, Space and the computer players throw exactly this way. Hand throws are not held to the table.
+
+Targets: `src/animals/wolf-targets.ts` (Kern 2006 single-pig odds plus the sitting Howl), ±10% of each.
+
+### Tangled and Alpha are judged on the visible animal
+
+The pig hitbox is wider than the wolf you see, so "hitboxes touching" counted near-misses as Tangled.
+Each animal now carries a **silhouette** (convex pieces built from its sculpt parts, fit applied), and:
+
+- **Tangled:** the visible animals touch (within `VISIBLE_GAP`, under half a millimetre).
+- **Alpha (the piggyback):** they touch and one is off the felt entirely, riding the other. Close to
+  impossible on a real throw (none in 260,000+), so it is an **instant win** with no rate target. The
+  demo page and the score sheet stage one (`stageAlpha`), and a test proves the staged drop holds.
+
+Under the stricter Tangled rule the Auto-roll pair is released closer together
+(`THROW_SPACING` 0.9, was 1.1): 1.1 gave 0.96% Tangled, 0.8 gave 1.87%.
+
+### Final record: 100,000 fresh throws (`src/animals/pig-odds.json`)
+
+| Result | Measured | Target | Band |
+|---|---|---|---|
+| Plain side | 33.59% | 34.8% | in |
+| Moon side | 32.18% | 30.0% | in |
+| Play Dead | 21.75% | 22.4% | in |
+| Prowl | 8.42% | 8.8% | in |
+| Sniff | 3.08% | 3.0% | in |
+| Pounce | 0.61% | 0.6% | in |
+| Howl | 0.40% | 0.4% | in |
+| Tangled (per roll) | 1.48% | 1.6% | in |
+| Alpha (per roll) | 0 | possible | staged (instant win) |
+
+Scattered 21.1% of rolls; 4.8 points per roll on average. The poses were also confirmed on 800,000
+throws before the contact rules changed (the rules do not touch the poses).
+
+`tests/unit/odds.test.ts` checks this record against the targets, and fails if the pig tuning, the pose
+boundaries, the contact rules or the throw spacing changed since it was measured.
+
+### Pose boundaries (`src/physics/classify.ts`), fitted on saved rests
+
+- **Howl (sit):** snout within ~32° of straight up (`SIT_AXIS` 0.85). Shallower snout-up tilts are a
+  wolf lying tipped back.
+- **Pounce (lean):** snout down past `LEAN_NOSE` 0.61 and tipped onto a shoulder past `LEAN_TILT` 0.5.
+- **Sniff:** snout down past `NOSE_AXIS` 0.6, square.
+- **Tangled / Alpha:** see above (visible silhouettes; Alpha needs one animal off the felt).
+
+### How the pig was tuned
+
+1. Sweeps at 800 throws (`sh tools/odds.sh winter 800 '<tune json>'`) to find the levers:
+   - body width trades the sides against Play Dead;
+   - the hind legs and the body's fore-aft position control sitting (Howl);
+   - the front legs control the snout tripod (Sniff);
+   - thinner, lighter feet lower Prowl.
+2. Full checks at 10,000 throws (`sh tools/calibrate-full.sh <name> '<tune json>'`, four seeded
+   batches in parallel, the same seeds for every candidate so differences are the shape, not luck).
+3. Boundaries fitted offline on saved rests: `npx tsx tools/fit-poses.ts calibration/*.json`.
+4. A clean 20,000-throw record on fresh seeds: `npx tsx tools/record-odds.ts <reports>`.
+
+`tools/tune-pig.mjs` is an automatic hill-climber over the same knobs, for future retuning.
+
+### Re-run after any change to the pig, the throw profile or the classifier
+
+```bash
+sh tools/alpha-run.sh record 1 2 8000          # 100,000 throws on two cores, resumable
+npx tsx tools/record-odds.ts calibration/record-*.report.json
+echo {} > src/demo/demo-seeds.json && npx tsx tools/find-demo-seeds.ts   # every throw changed
+npm test
+```
+
+---
+
+## History (the retired direwolves and capsule wolf)
+
+
 Point values come from how often each pose actually happens, measured by throwing the real
 wolf geometry with real physics. Re-run after any change to the wolf's shape or the physics constants.
 
