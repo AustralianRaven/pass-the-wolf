@@ -1,7 +1,7 @@
 {
-  "measured": "2026-11-18",
+  "measured": "2026-11-19",
   "profile": "auto-roll",
-  "throws": 20000,
+  "throws": 100000,
   "tune": {
     "body": [
       0.5,
@@ -32,23 +32,23 @@
     "LEAN_NOSE": 0.61,
     "LEAN_TILT": 0.5
   },
-  "alphaSupport": 0.37,
+  "contactRule": "visible-touch; alpha = one off the floor",
+  "throwSpacing": 0.9,
   "posePct": {
-    "sideMarkUp": 32.51,
-    "sideMarkDown": 33.627,
-    "back": 21.418,
-    "upright": 8.445,
-    "noseDown": 3.007,
-    "lean": 0.61,
-    "tailDown": 0.383
+    "sideMarkUp": 32.175,
+    "sideMarkDown": 33.59,
+    "back": 21.75,
+    "upright": 8.42,
+    "noseDown": 3.075,
+    "lean": 0.605,
+    "tailDown": 0.395
   },
   "resultPct": {
-    "score": 49.595,
-    "scattered": 21.675,
-    "den": 21.48,
-    "double": 5.57,
-    "tangled": 1.64,
-    "alpha": 0.04
+    "score": 50.57,
+    "den": 21.22,
+    "scattered": 21.135,
+    "double": 5.595,
+    "tangled": 1.475
   },
-  "avgPointsPerRoll": 4.71
+  "avgPointsPerRoll": 4.76
 }

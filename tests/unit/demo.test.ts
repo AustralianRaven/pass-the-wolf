@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_RESULTS, demoThrow, resultKey, stageAlpha } from '../../src/demo/results';
+import { DEMO_RESULTS, demoThrow, restAtEdge, resultKey, stageAlpha } from '../../src/demo/results';
 import seeds from '../../src/demo/demo-seeds.json';
 import { PIG_HITBOX } from '../../src/animals/pig-hitbox';
 import { WOLF_DICE } from '../../src/animals/wolf-dice';
@@ -44,6 +44,7 @@ describe('Feature: the demo Tangled and Alpha are real physics', () => {
     const seed = (seeds as Record<string, number>).tangled;
     expect(seed, 'Then a Tangled throw is recorded').toBeTypeOf('number');
     const world = new DiceWorld(await loadRapier(), [WOLF_DICE[0]!, WOLF_DICE[0]!]);
+    restAtEdge(world);
     world.throwDice(demoThrow(seed!));
     expect(resultKey(world.settle()), 'Then the throw lands Tangled').toBe('tangled');
     world.free();

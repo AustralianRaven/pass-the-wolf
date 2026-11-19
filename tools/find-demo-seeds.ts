@@ -8,7 +8,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { constants, setPriority } from 'node:os';
 import { getAnimal } from '../src/animals/registry';
-import { DEMO_KEYS, demoThrow, resultKey } from '../src/demo/results';
+import { DEMO_KEYS, demoThrow, restAtEdge, resultKey } from '../src/demo/results';
 import { DiceWorld, loadRapier } from '../src/physics/dice-world';
 
 try {
@@ -31,6 +31,7 @@ for (let seed = start; tried < max; seed += stride, tried++) {
     if (DEMO_KEYS.every((k) => all[k] !== undefined)) break;
   }
   const world = new DiceWorld(R, [wolf, wolf]);
+  restAtEdge(world);
   world.throwDice(demoThrow(seed));
   const key = resultKey(world.settle());
   world.free();

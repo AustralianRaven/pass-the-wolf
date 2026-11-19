@@ -49,6 +49,17 @@ export function stageAlpha(world: DiceWorld): void {
   world.place(1, [-0.05, 0.62, 0.4], { x: 0, y: 0, z: 0, w: 1 });
 }
 
+/**
+ * Lay the wolves at the thrower's edge and let them settle, exactly as the demo page does before
+ * every throw. The finder, the page and the tests all start here, so a recorded seed lands the
+ * same way everywhere.
+ */
+export function restAtEdge(world: DiceWorld): void {
+  world.place(0, [-0.9, 0.02, 2.6], { x: 0, y: 0.38, z: 0, w: 0.925 });
+  world.place(1, [0.9, 0.02, 2.6], { x: 0, y: -0.38, z: 0, w: 0.925 });
+  world.settle(240);
+}
+
 /** A demo throw is an ordinary Auto-roll throw, fully determined by its seed. */
 export function demoThrow(seed: number): ThrowInput {
   return { ...autoRollInput(createRng(seed ^ 0x5eed)), seed };
