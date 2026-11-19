@@ -1419,3 +1419,25 @@ select {
   color: var(--frost);
   font-weight: 700;
 }
+
+/* ---------- Debug: version and dice diagnostics ---------- */
+.settings__version {
+  margin: 0.4rem 0 0;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+}
+.diag {
+  position: absolute;
+  right: 1rem;
+  bottom: 9rem;
+  z-index: 20;
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  max-width: min(36rem, calc(100vw - 2rem));
+  background: rgb(10 6 22 / 0.86);
+  border: 2px solid var(--ink-faint);
+  color: var(--frost);
+  font: 0.75rem/1.4 ui-monospace, monospace;
+  white-space: pre-wrap;
+  pointer-events: none;
+}

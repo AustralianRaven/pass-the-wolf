@@ -1,6 +1,7 @@
 import type { SettledDice } from '../physics/dice-world';
 import type { Setup } from '../game/settings';
 import type { NetMessage, Transport } from './transport';
+import { BUILD } from '../version';
 
 /**
  * An online game (#2). The host sequences everything: guests send their actions to the host as
@@ -50,6 +51,8 @@ export class NetSession {
   onClosed: (reason: string) => void = () => {};
   /** A seat's player dropped (host only): the controller decides whether to skip their turn. */
   onDropped: (seat: number) => void = () => {};
+  /** Host only: someone tried to join on a different version of the game. */
+  onMismatch: (name: string, theirs: string) => void = () => {};
   /** Host only: may `by` do `ev` right now? Set by the game controller once play starts. */
   validate: (ev: GameEvent, by: string) => boolean = () => false;
 
@@ -57,6 +60,8 @@ export class NetSession {
     readonly transport: Transport,
     role: Role,
     private readonly me: Omit<Player, 'id' | 'connected'>,
+    /** This copy of the game's version; every player in a room must run the same one. */
+    private readonly build: string = BUILD,
   ) {
     this.role = role;
     this.hostId = role === 'host' ? transport.selfId : null;
@@ -80,7 +85,7 @@ export class NetSession {
 
   /** Guests: say hello (again) so the host lists us. Safe to call any time. */
   hello(to?: string): void {
-    if (this.role === 'guest') this.transport.send({ t: 'hello', player: this.me }, to);
+    if (this.role === 'guest') this.transport.send({ t: 'hello', player: this.me, build: this.build }, to);
   }
 
   /** Host: deal the game to every player in the lobby. */
@@ -162,6 +167,15 @@ export class NetSession {
   private receiveAsHost(msg: NetMessage, from: string): void {
     if (msg.t === 'hello') {
       const info = msg.player as Omit<Player, 'id' | 'connected'>;
+      const theirs = String(msg.build ?? 'unknown');
+      if (theirs !== this.build) {
+        // A stale, cached copy of the game would replay throws differently: turn it away clearly.
+        this.onMismatch(info.name, theirs);
+        return void this.transport.send(
+          { t: 'end', reason: `This room runs a different version of Pass the Wolf (yours ${theirs}, the host's ${this.build}). Refresh the page with Ctrl+Shift+R, then join again.` },
+          from,
+        );
+      }
       if (this.started) return this.rejoin(info, from);
       const others = this.players.filter((p) => p.id !== from);
       if (others.length >= 6) return void this.transport.send({ t: 'end', reason: 'The table is full (6 players).' }, from);

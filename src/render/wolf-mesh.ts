@@ -100,6 +100,14 @@ export function requestWolfGeometry(design: WolfDesign, step: number, urgent = f
  * A painted wolf: coat, moon mark on the +Z flank, amber eyes and an optional seat-coloured
  * collar. Width is stretched by design.width to match the physics collider.
  */
+/** What a carved animal's health check found (and fixed) this frame. */
+export interface WolfHealth {
+  readonly verts: number;
+  readonly bonesOk: boolean;
+  /** What was repaired, if anything: 'geometry', 'bones' or both. */
+  readonly healed: string;
+}
+
 export function createWolfMesh(design: WolfDesign, opts: WolfMeshOptions = {}): THREE.Group {
   const step = opts.step ?? 0.0105;
   const w = design.width;
@@ -121,6 +129,34 @@ export function createWolfMesh(design: WolfDesign, opts: WolfMeshOptions = {}): 
   const group = new THREE.Group();
   group.add(body);
   if (wobble) group.userData.wobble = wobble;
+  /**
+   * Self-repair, run every frame by the scene: an animal's body must never stay invisible. If the
+   * carved body is missing while the carving exists, put it back; if a bone has gone bad, straighten
+   * the rig. The collar and eyes never depend on either, so a broken body would leave "just a collar".
+   */
+  group.userData.check = (): WolfHealth => {
+    let healed = '';
+    let verts = body.geometry.getAttribute('position')?.count ?? 0;
+    const carved = geometryCache.get(key);
+    if (verts === 0 && carved && (carved.getAttribute('position')?.count ?? 0) > 0) {
+      if (wobble) skinWolfGeometry(carved, design);
+      body.geometry = carved;
+      opts.placeholder?.removeFromParent();
+      verts = carved.getAttribute('position')!.count;
+      healed = 'geometry';
+    }
+    let bonesOk = true;
+    if (wobble && body instanceof THREE.SkinnedMesh) {
+      const q = (b: THREE.Bone) => b.quaternion.x + b.quaternion.y + b.quaternion.z + b.quaternion.w;
+      bonesOk = body.skeleton.bones.every((b) => Number.isFinite(q(b))) && (body.skeleton.boneMatrices?.every(Number.isFinite) ?? true);
+      if (!bonesOk) {
+        wobble.reset();
+        body.skeleton.pose();
+        healed += healed ? '+bones' : 'bones';
+      }
+    }
+    return { verts, bonesOk, healed };
+  };
   if (opts.async && !ready) {
     if (opts.placeholder) group.add(opts.placeholder);
     void requestWolfGeometry(design, step, true).then((g) => {

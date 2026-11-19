@@ -110,3 +110,22 @@ describe('Feature: throws travel as a recording', () => {
     expect(results.filter(Boolean), 'Then exactly one whole message comes out').toEqual([big]);
   });
 });
+
+describe('Feature: every player runs the same version', () => {
+  it('Scenario: Given a guest on an older cached copy, When they join, Then they are told to refresh and are not dealt in', async () => {
+    const hub = new MemoryHub();
+    const host = new NetSession(hub.connect('host'), 'host', { name: 'Kat', colour: '#a58bd6', animal: 'winter' }, 'abc1234');
+    const stale = new NetSession(hub.connect('old'), 'guest', { name: 'Ash', colour: '#e07a3a', animal: 'beaver' }, 'old9999');
+    let told = '';
+    let warned = '';
+    stale.onClosed = (reason) => (told = reason);
+    host.onMismatch = (name) => (warned = name);
+    await settle();
+    stale.hello();
+    await settle();
+    await settle();
+    expect(host.roster.map((p) => p.name), 'Then the stale guest is not listed').toEqual(['Kat']);
+    expect(told, 'Then the stale guest is told to refresh').toMatch(/Refresh the page/);
+    expect(warned, 'Then the host is told who was turned away').toBe('Ash');
+  });
+});

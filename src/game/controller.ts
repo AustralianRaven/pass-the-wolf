@@ -625,6 +625,13 @@ export class GameController {
     this.pump();
   }
 
+  /** One line of turn state for the dice diagnostics. */
+  debugState(): string {
+    const net = this.net ? ` · ${this.net.session.isHost ? 'host' : 'guest'} · queue ${this.queue.length}` : '';
+    const replay = this.replay ? ` · replaying ${this.replay.frames.length / 14} frames` : '';
+    return `phase ${this.phase}${net}${replay}`;
+  }
+
   /** Auto-roll button: the calibrated throw profile, so its odds match the target table. */
   rollButton(): void {
     if (!this.canThrowNow()) return;
